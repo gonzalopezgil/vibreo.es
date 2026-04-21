@@ -1,0 +1,131 @@
+import type { AlbumChartEntry } from "@/components/AlbumChartRow";
+import type { ArtistChartEntry } from "@/components/ArtistChartRow";
+import type { ChartEntry } from "@/components/ChartRow";
+
+const DIRECT_API = "https://api.vibreo.es";
+
+export type YouTubeLinks = Record<string, { m?: string; v?: string; vt?: string }>;
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+const isBrowser = typeof window !== "undefined";
+
+function getApiBase(): string {
+  if (!isBrowser) return DIRECT_API;
+  const origin = window.location.origin;
+  if (origin.includes("vibreo.es")) return DIRECT_API;
+  return "/api-proxy";
+}
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const base = getApiBase();
+  const headers: HeadersInit = {};
+
+  if (!isBrowser) {
+    headers["Origin"] = "https://vibreo.es";
+  }
+
+  const res = await fetch(`${base}${path}`, { headers, cache: "no-store" });
+  if (!res.ok) throw new Error("Something went wrong. Please try again later.");
+  return res.json();
+}
+
+export async function getLatest() {
+  return apiFetch<{ songs_daily: string; artists_daily: string; albums_weekly: string; updated_at?: string }>("/latest");
+}
+
+export async function getChartSongsDaily(country: string, date: string) {
+  return apiFetch<ChartEntry[]>(`/charts/songs/daily/${country}/${date}`);
+}
+
+export async function getChartArtistsDaily(country: string, date: string) {
+  return apiFetch<ArtistChartEntry[]>(`/charts/artists/daily/${country}/${date}`);
+}
+
+export async function getChartAlbumsWeekly(country: string, date: string) {
+  return apiFetch<AlbumChartEntry[]>(`/charts/albums/weekly/${country}/${date}`);
+}
+
+export async function getSong<T>(id: string) {
+  return apiFetch<T>(`/songs/${id}`);
+}
+
+export async function getArtist<T>(id: string) {
+  return apiFetch<T>(`/artists/${id}`);
+}
+
+export async function getAlbum<T>(id: string) {
+  return apiFetch<T>(`/albums/${id}`);
+}
+
+export async function getChartingSongs<T>() {
+  return apiFetch<T>("/charting/songs");
+}
+
+export async function getChartingArtists<T>() {
+  return apiFetch<T>("/charting/artists");
+}
+
+export async function getChartingAlbums<T>() {
+  return apiFetch<T>("/charting/albums");
+}
+
+export async function getMarketStreams() {
+  return apiFetch<Record<string, number>>("/charting/market-streams");
+}
+
+export function getHeroVideoUrl(trackId: string): string {
+  return `${DIRECT_API}/hero-video/${trackId}`;
+}
+
+export async function getYouTubeLinks() {
+  return apiFetch<YouTubeLinks>("/charting/youtube-links");
+}
+
+export async function getArtistChannels() {
+  return apiFetch<Record<string, string>>("/charting/artist-channels");
+}
+
+export async function searchAll(q: string) {
+  return apiFetch<{
+    query: string;
+    topResult: {
+      type: 'song' | 'artist' | 'album';
+      uri: string;
+      title: string;
+      subtitle: string;
+      image_url: string;
+      score: number;
+    } | null;
+    artists: Array<{
+      type: 'song' | 'artist' | 'album';
+      uri: string;
+      title: string;
+      subtitle: string;
+      image_url: string;
+      score: number;
+    }>;
+    songs: Array<{
+      type: 'song' | 'artist' | 'album';
+      uri: string;
+      title: string;
+      subtitle: string;
+      image_url: string;
+      score: number;
+    }>;
+    albums: Array<{
+      type: 'song' | 'artist' | 'album';
+      uri: string;
+      title: string;
+      subtitle: string;
+      image_url: string;
+      score: number;
+    }>;
+    meta: {
+      interpretedIntent: 'artist' | 'song' | 'album' | 'mixed';
+      totalCandidates: number;
+    };
+  }>(`/search?q=${encodeURIComponent(q)}`);
+}
