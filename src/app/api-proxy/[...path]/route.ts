@@ -78,10 +78,10 @@ function revalidateSeconds(path: string): number {
   return 86400;
 }
 
-function cacheControl(path: string, status: number): string {
+function cdnCacheControl(path: string, status: number): string {
   if (status >= 400) return 'no-store';
   const ttl = revalidateSeconds(path);
-  return `public, s-maxage=${ttl}, stale-while-revalidate=${Math.min(ttl, 300)}`;
+  return `public, max-age=${ttl}, stale-while-revalidate=${Math.min(ttl, 300)}`;
 }
 
 export async function OPTIONS(request: NextRequest) {
@@ -119,7 +119,9 @@ export async function GET(
     status: res.status,
     headers: {
       'Content-Type': res.headers.get('Content-Type') || 'application/json',
-      'Cache-Control': cacheControl(apiPath, res.status),
+      'Cache-Control': res.status >= 400 ? 'no-store' : 'public, max-age=0, must-revalidate',
+      'CDN-Cache-Control': cdnCacheControl(apiPath, res.status),
+      'Vercel-CDN-Cache-Control': cdnCacheControl(apiPath, res.status),
       ...corsHeaders(request),
     },
   });

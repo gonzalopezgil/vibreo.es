@@ -39,7 +39,8 @@ describe('api proxy route', () => {
     });
     expect(response.status).toBe(201);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://vibreo.es');
-    expect(response.headers.get('Cache-Control')).toBe('public, s-maxage=1800, stale-while-revalidate=300');
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=0, must-revalidate');
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('public, max-age=1800, stale-while-revalidate=300');
     expect(response.headers.get('Vary')).toBe('Origin');
     await expect(response.json()).resolves.toEqual({ ok: true });
   });
