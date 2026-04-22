@@ -17,7 +17,7 @@ describe('api', () => {
     }
   });
 
-  it('calls the latest endpoint with no-store caching in the browser', async () => {
+  it('routes production browser requests through the same-origin proxy', async () => {
     const payload = { songs_daily: '2026-03-29', albums_weekly: '2026-W13' };
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
@@ -31,7 +31,7 @@ describe('api', () => {
     const api = await import('@/lib/api');
 
     await expect(api.getLatest()).resolves.toEqual(payload);
-    expect(global.fetch).toHaveBeenCalledWith('https://api.vibreo.es/latest', {
+    expect(global.fetch).toHaveBeenCalledWith('/api-proxy/latest', {
       cache: 'no-store',
       headers: {},
     });
@@ -131,7 +131,7 @@ describe('api', () => {
     const api = await import('@/lib/api');
 
     await call(api);
-    expect(global.fetch).toHaveBeenCalledWith(`https://api.vibreo.es${path}`, {
+    expect(global.fetch).toHaveBeenCalledWith(`/api-proxy${path}`, {
       cache: 'no-store',
       headers: {},
     });

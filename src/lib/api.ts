@@ -14,8 +14,6 @@ const isBrowser = typeof window !== "undefined";
 
 function getApiBase(): string {
   if (!isBrowser) return DIRECT_API;
-  const origin = window.location.origin;
-  if (origin.includes("vibreo.es")) return DIRECT_API;
   return "/api-proxy";
 }
 
