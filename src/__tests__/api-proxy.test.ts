@@ -11,7 +11,7 @@ describe('api proxy route', () => {
     global.fetch = fetchMock;
   });
 
-  it('forwards allowed paths to the public API with no-store caching', async () => {
+  it('forwards allowed paths to the public API with client IP and CDN caching', async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {
         status: 201,
@@ -21,17 +21,25 @@ describe('api proxy route', () => {
 
     const response = await GET(
       new NextRequest('https://vibreo.es/api-proxy/charting/songs?limit=5', {
-        headers: { Origin: 'https://vibreo.es' },
+        headers: {
+          Origin: 'https://vibreo.es',
+          'X-Forwarded-For': '203.0.113.10, 198.51.100.20',
+        },
       }),
       { params: Promise.resolve({ path: ['charting', 'songs'] }) },
     );
 
     expect(fetchMock).toHaveBeenCalledWith('https://api.vibreo.es/charting/songs?limit=5', {
-      cache: 'no-store',
-      headers: { Origin: 'https://vibreo.es' },
+      cache: 'force-cache',
+      headers: {
+        Origin: 'https://vibreo.es',
+        'X-Vibreo-Client-IP': '203.0.113.10',
+      },
+      next: { revalidate: 1800 },
     });
     expect(response.status).toBe(201);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://vibreo.es');
+    expect(response.headers.get('Cache-Control')).toBe('public, s-maxage=1800, stale-while-revalidate=300');
     expect(response.headers.get('Vary')).toBe('Origin');
     await expect(response.json()).resolves.toEqual({ ok: true });
   });

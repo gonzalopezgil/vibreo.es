@@ -51,6 +51,39 @@ function isAllowedApiPath(path: string) {
   return ALLOWED_API_PATHS.some((pattern) => pattern.test(path));
 }
 
+function getClientIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  return forwardedFor || request.headers.get('x-real-ip') || 'unknown';
+}
+
+function upstreamHeaders(request: NextRequest): HeadersInit {
+  const headers: Record<string, string> = {
+    Origin: PUBLIC_ORIGIN,
+    'X-Vibreo-Client-IP': getClientIp(request),
+  };
+  const proxySecret = process.env.VIBREO_API_PROXY_SECRET;
+
+  if (proxySecret) {
+    headers['X-Vibreo-Proxy-Secret'] = proxySecret;
+  }
+
+  return headers;
+}
+
+function revalidateSeconds(path: string): number {
+  if (path === '/latest') return 60;
+  if (path === '/search') return 300;
+  if (path.startsWith('/charts/')) return 3600;
+  if (path.startsWith('/charting/')) return 1800;
+  return 86400;
+}
+
+function cacheControl(path: string, status: number): string {
+  if (status >= 400) return 'no-store';
+  const ttl = revalidateSeconds(path);
+  return `public, s-maxage=${ttl}, stale-while-revalidate=${Math.min(ttl, 300)}`;
+}
+
 export async function OPTIONS(request: NextRequest) {
   if (!isAllowedOrigin(request)) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403, headers: corsHeaders(request) });
@@ -77,17 +110,16 @@ export async function GET(
   }
 
   const res = await fetch(url, {
-    headers: {
-      Origin: PUBLIC_ORIGIN,
-    },
-    cache: 'no-store',
+    headers: upstreamHeaders(request),
+    cache: 'force-cache',
+    next: { revalidate: revalidateSeconds(apiPath) },
   });
 
   return new NextResponse(res.body, {
     status: res.status,
     headers: {
       'Content-Type': res.headers.get('Content-Type') || 'application/json',
-      'Cache-Control': 'no-store',
+      'Cache-Control': cacheControl(apiPath, res.status),
       ...corsHeaders(request),
     },
   });
