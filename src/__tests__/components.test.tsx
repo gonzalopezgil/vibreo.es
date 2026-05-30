@@ -184,6 +184,20 @@ describe('DatePicker', () => {
 });
 
 describe('modal, icons and video hero', () => {
+  it('renders the image modal at document body level so page chrome cannot clip it', () => {
+    render(
+      <div data-testid="nested-host">
+        <ImageModal src="/cover.jpg" alt="Cover" onClose={jest.fn()} />
+      </div>,
+    );
+
+    const modal = screen.getByRole('img', { name: 'Cover' }).closest('div');
+
+    expect(modal).toHaveClass('fixed', 'inset-0');
+    expect(modal?.parentElement).toBe(document.body);
+    expect(screen.getByTestId('nested-host')).toBeEmptyDOMElement();
+  });
+
   it('closes the image modal from backdrop and Escape, but not image clicks', () => {
     const onClose = jest.fn();
     render(<ImageModal src="/cover.jpg" alt="Cover" onClose={onClose} />);
