@@ -1,4 +1,7 @@
-/** @jest-environment node */
+/**
+ * @jest-environment node
+ * @jest-environment-options {"globalsCleanup":"off"}
+ */
 
 import { NextRequest } from 'next/server';
 import { GET, OPTIONS } from '@/app/api-proxy/[...path]/route';

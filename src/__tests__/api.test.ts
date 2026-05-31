@@ -1,4 +1,7 @@
-/** @jest-environment node */
+/**
+ * @jest-environment node
+ * @jest-environment-options {"globalsCleanup":"off"}
+ */
 
 describe('api', () => {
   const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
