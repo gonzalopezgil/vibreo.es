@@ -30,6 +30,8 @@ interface VideoHeroProps {
   fallbackClassName?: string;
   /** Overlay content rendered on top of the video */
   children?: ReactNode;
+  /** Media rendered behind content when the video is absent, loading, or failed */
+  fallbackMedia?: ReactNode;
   /** Extra classes applied to the outer wrapper */
   className?: string;
   /** Allow popovers inside the hero to escape the section bounds */
@@ -43,25 +45,34 @@ export function VideoHero({
   overlayClassName = 'bg-gradient-to-b from-black/60 via-black/40 to-zinc-950',
   fallbackClassName = 'bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800',
   children,
+  fallbackMedia,
   className = '',
   allowOverflow = false,
   label,
 }: VideoHeroProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoFailed, setVideoFailed] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
+  const [videoStatus, setVideoStatus] = useState<{
+    src: string | null;
+    failed: boolean;
+    ready: boolean;
+  }>({ src: null, failed: false, ready: false });
+
+  const currentVideoSrc = videoSrc ?? null;
+  const statusMatchesCurrentSrc = videoStatus.src === currentVideoSrc;
+  const videoFailed = statusMatchesCurrentSrc ? videoStatus.failed : false;
+  const videoReady = statusMatchesCurrentSrc ? videoStatus.ready : false;
 
   // Fade the video in once it's loaded enough to play
   useEffect(() => {
-    if (!videoSrc) return;
+    if (!currentVideoSrc) return;
     const vid = videoRef.current;
     if (!vid) return;
 
     const handleReady = () => {
-      setVideoReady(true);
+      setVideoStatus({ src: currentVideoSrc, failed: false, ready: true });
       vid.play().catch(() => {}); // Ensure play starts
     };
-    const handleError = () => setVideoFailed(true);
+    const handleError = () => setVideoStatus({ src: currentVideoSrc, failed: true, ready: false });
 
     vid.addEventListener('canplaythrough', handleReady);
     vid.addEventListener('loadeddata', handleReady);
@@ -80,7 +91,7 @@ export function VideoHero({
       vid.removeEventListener('loadeddata', handleReady);
       vid.removeEventListener('error', handleError);
     };
-  }, [videoSrc]);
+  }, [currentVideoSrc]);
 
   const hasVideo = !!videoSrc && !videoFailed;
 
@@ -96,7 +107,9 @@ export function VideoHero({
           hasVideo && videoReady ? 'opacity-0' : 'opacity-100'
         }`}
         aria-hidden="true"
-      />
+      >
+        {fallbackMedia}
+      </div>
 
       {/* Video background */}
       {hasVideo && (

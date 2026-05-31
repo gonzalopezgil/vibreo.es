@@ -190,9 +190,7 @@ export default function Home() {
             videoSrc={heroVideoSrc}
             className="rounded-2xl"
             fallbackClassName="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800"
-          >
-            {/* Blurred album art fallback (shows behind video or when no video) */}
-            {!heroVideoSrc && hero.image_url && (
+            fallbackMedia={hero.image_url ? (
               <Image
                 src={hero.image_url}
                 alt=""
@@ -201,7 +199,8 @@ export default function Home() {
                 className="blur-3xl scale-110 opacity-40 object-cover absolute inset-0 z-0"
                 aria-hidden="true"
               />
-            )}
+            ) : null}
+          >
             <div className="flex flex-col items-center p-6 md:p-10 pt-8 pb-6">
               {hero.image_url ? (
                 <button

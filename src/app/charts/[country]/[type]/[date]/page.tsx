@@ -255,6 +255,16 @@ export default function ChartTypeDatePage() {
         allowOverflow
         fallbackClassName="bg-zinc-950"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
+        fallbackMedia={numberOne?.image_url ? (
+          <Image
+            src={numberOne.image_url}
+            alt=""
+            fill
+            sizes="100vw"
+            className="blur-3xl scale-110 opacity-35 object-cover absolute inset-0 z-0"
+            aria-hidden="true"
+          />
+        ) : null}
       >
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pt-8 pb-8">
           <div className="flex items-center justify-between gap-3">

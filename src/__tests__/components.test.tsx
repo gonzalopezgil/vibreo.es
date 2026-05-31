@@ -225,7 +225,14 @@ describe('modal, icons and video hero', () => {
 
   it('renders a video hero and falls back after video errors', () => {
     render(
-      <VideoHero videoSrc="/hero.mp4" label="Hero">
+      <VideoHero
+        videoSrc="/hero.mp4"
+        label="Hero"
+        fallbackMedia={
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/cover.jpg" alt="Fallback cover" />
+        }
+      >
         <h1>Now Playing</h1>
       </VideoHero>,
     );
@@ -238,6 +245,7 @@ describe('modal, icons and video hero', () => {
 
     fireEvent.error(video as HTMLVideoElement);
     expect(section.querySelector('video')).not.toBeInTheDocument();
+    expect(screen.getByAltText('Fallback cover')).toBeInTheDocument();
   });
 });
 

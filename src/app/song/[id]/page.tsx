@@ -159,8 +159,7 @@ export default function SongPage() {
         className="mb-8"
         fallbackClassName="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
-      >
-        {!heroVideoSrc && song.image_url && (
+        fallbackMedia={song.image_url ? (
           <Image
             src={song.image_url}
             alt=""
@@ -169,8 +168,8 @@ export default function SongPage() {
             className="blur-3xl scale-110 opacity-40 object-cover absolute inset-0 z-0"
             aria-hidden="true"
           />
-        )}
-
+        ) : null}
+      >
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pt-6 pb-8">
           {/* Back */}
           <button
