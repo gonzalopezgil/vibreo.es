@@ -39,8 +39,9 @@ function timeAgo(isoStr: string): string {
 
 function HeroSkeleton() {
   return (
-    <section className="px-4 pt-10 pb-6">
-      <div className="relative flex flex-col items-center rounded-2xl bg-gradient-to-b from-zinc-800/60 to-zinc-900/80 p-6 md:p-10 overflow-hidden">
+    <section className="relative">
+      <div className="relative flex min-h-[calc(100svh-3.5rem)] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-zinc-800/50 via-zinc-900 to-zinc-950 px-4 py-8 pb-28 md:pb-32">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-transparent via-zinc-950/75 to-zinc-950 md:h-48" />
         <div className="w-[160px] h-[160px] md:w-[200px] md:h-[200px] rounded-xl bg-zinc-800 animate-pulse" />
         <div className="mt-5 w-48 h-6 bg-zinc-800 rounded animate-pulse" />
         <div className="mt-2 w-32 h-4 bg-zinc-800 rounded animate-pulse" />
@@ -178,18 +179,19 @@ export default function Home() {
   /* ── Render ──────────────────────────────────────────────────────── */
 
   return (
-    <main className="flex flex-col gap-3 min-h-screen">
+    <main className="flex min-h-screen flex-col">
       {/* ─── Section 1: Hero Spotlight ─────────────────────────────── */}
       {hero && (() => {
         const heroTrackId = hero.uri.split(':').pop() || '';
         const heroVideoSrc = ytLinksMap[hero.uri]?.v ? getHeroVideoUrl(heroTrackId) : null;
 
         return (
-        <section className="px-4 pt-8">
+        <section className="relative">
           <VideoHero
             videoSrc={heroVideoSrc}
-            className="rounded-2xl"
-            fallbackClassName="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800"
+            className="min-h-[calc(100svh-3.5rem)] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-[5] after:h-36 after:bg-gradient-to-b after:from-transparent after:via-zinc-950/75 after:to-zinc-950 after:content-[''] md:after:h-48"
+            overlayClassName="bg-gradient-to-b from-black/55 via-black/35 to-zinc-950/90"
+            fallbackClassName="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950"
             fallbackMedia={hero.image_url ? (
               <Image
                 src={hero.image_url}
@@ -201,7 +203,7 @@ export default function Home() {
               />
             ) : null}
           >
-            <div className="flex flex-col items-center p-6 md:p-10 pt-8 pb-6">
+            <div className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-8 pb-28 md:pb-32">
               {hero.image_url ? (
                 <button
                   type="button"
@@ -280,7 +282,7 @@ export default function Home() {
       })()}
 
       {/* ─── Section 2: What's Hot — Top 10 ────────────────────────── */}
-      <section className="mx-auto w-full max-w-3xl min-h-0 px-0 sm:px-4">
+      <section className="relative z-20 -mt-8 mx-auto w-full max-w-3xl min-h-0 px-0 sm:mt-0 sm:px-4">
         <div className="px-4 sm:px-0">
           <SectionHeader title="What's Hot" subtitle="Top 10 Global" icon={Flame} />
         </div>
