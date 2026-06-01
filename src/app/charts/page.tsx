@@ -95,7 +95,7 @@ export default function ChartsPage() {
   });
 
   return (
-    <main className="min-h-screen px-4 pb-24 pt-6">
+    <main className="min-h-screen px-4 pt-6">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
         <header>
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">Spotify charts</p>

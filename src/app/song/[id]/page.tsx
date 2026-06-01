@@ -100,7 +100,7 @@ export default function SongPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen pb-24 px-4 pt-6">
+      <main className="min-h-screen px-4 pt-6">
         <div className="mx-auto max-w-2xl space-y-6">
           <div className="w-20 h-4 bg-zinc-800 rounded animate-pulse" />
           <div className="flex flex-col items-center gap-4">
@@ -153,7 +153,7 @@ export default function SongPage() {
   const heroVideoSrc = ytLinks?.v ? getHeroVideoUrl(id) : null;
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen">
       <VideoHero
         videoSrc={heroVideoSrc}
         className="mb-8"

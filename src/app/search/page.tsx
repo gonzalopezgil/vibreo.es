@@ -78,7 +78,7 @@ function normalizeLegacyResponse(raw: SearchResponse | LegacySearchItem[], query
 function ResultTypeBadge({ type }: { type: SearchItemType }) {
   const label = type === 'artist' ? 'Artist' : type === 'album' ? 'Album' : 'Song';
   return (
-    <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
+    <span className="shrink-0 rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
       {label}
     </span>
   );
@@ -140,7 +140,7 @@ function ResultRow({ item }: { item: SearchResultItem }) {
     <li>
       <Link
         href={getHref(item)}
-        className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-zinc-900/80"
+        className="flex min-w-0 items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-zinc-900/80"
       >
         <ResultArtwork item={item} size={52} />
         <div className="min-w-0 flex-1">
@@ -156,12 +156,12 @@ function ResultRow({ item }: { item: SearchResultItem }) {
 function ResultSection({ title, items }: { title: string; items: SearchResultItem[] }) {
   if (!items.length) return null;
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-zinc-100">{title}</h3>
-        <span className="text-xs uppercase tracking-[0.2em] text-zinc-600">Top matches</span>
+    <section className="min-w-0 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="min-w-0 text-lg font-bold text-zinc-100">{title}</h3>
+        <span className="shrink-0 text-xs uppercase tracking-[0.2em] text-zinc-600">Top matches</span>
       </div>
-      <ul className="space-y-1 rounded-3xl border border-zinc-800 bg-zinc-950/70 p-2">
+      <ul className="min-w-0 space-y-1 rounded-3xl border border-zinc-800 bg-zinc-950/70 p-2">
         {items.map((item) => (
           <ResultRow key={`${item.type}:${item.uri}`} item={item} />
         ))}
@@ -219,7 +219,7 @@ export default function SearchPage() {
   }, [results, topKey]);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 pb-24">
+    <main className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-500">Search</p>
@@ -260,7 +260,7 @@ export default function SearchPage() {
         {results && (results.topResult || results.artists.length || results.songs.length || results.albums.length) && (
           <div className="space-y-8">
             {results.topResult && <TopResultCard item={results.topResult} />}
-            <div className="grid gap-8 lg:grid-cols-2">
+            <div className="grid min-w-0 gap-8 lg:grid-cols-2">
               <ResultSection title="Songs" items={sections.songs} />
               <ResultSection title="Artists" items={sections.artists} />
             </div>

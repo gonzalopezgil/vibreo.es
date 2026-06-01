@@ -8,7 +8,7 @@ import { ChevronLeft, Music, User, Disc } from 'lucide-react';
 import { SpotifyIcon, YouTubeMusicIcon } from '@/components/PlatformIcons';
 import { ImageModal } from '@/components/ImageModal';
 import { VideoHero } from '@/components/VideoHero';
-import { getArtist, getChartingArtists, getChartingAlbums, getMarketStreams, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
+import { getArtist, getChartingArtists, getChartingAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
 import { FlagIcon } from '@/components/FlagIcon';
 import { getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
@@ -23,7 +23,7 @@ interface ChartingSong {
   track_uri: string;
   track_name: string;
   image_url: string;
-  positions: { country: string; rank: number; streams: number }[];
+  positions: ChartingSongPosition[];
 }
 
 interface ArtistChartPosition {
@@ -46,6 +46,12 @@ type ChartingArtistData = {
   positions?: ArtistChartPosition[];
 };
 
+interface ChartingSongPosition {
+  country: string;
+  rank: number;
+  streams: number;
+}
+
 type ChartingAlbumData = {
   album_name?: string;
   artist_names?: string;
@@ -58,6 +64,24 @@ type Tab = 'songs' | 'artist-chart' | 'albums';
 
 function extractId(uri: string) {
   return uri.split(':').pop() || uri;
+}
+
+function getSongDisplayStreams(song: ChartingSong) {
+  const globalPos = song.positions.find((position) => position.country === 'global');
+  return globalPos?.streams ?? song.positions.reduce((sum, position) => sum + position.streams, 0);
+}
+
+function getTopCountryPosition(song: ChartingSong) {
+  let topCountryPosition: ChartingSongPosition | undefined;
+
+  for (const position of song.positions) {
+    if (position.country === 'global') continue;
+    if (!topCountryPosition || position.streams > topCountryPosition.streams) {
+      topCountryPosition = position;
+    }
+  }
+
+  return topCountryPosition ?? song.positions[0];
 }
 
 function ArtistAvatar({ src, name, size }: { src: string; name: string; size: number }) {
@@ -96,7 +120,6 @@ export default function ArtistPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showImage, setShowImage] = useState(false);
-  const [mktStreams, setMktStreams] = useState<Record<string, number>>({});
   const [ytChannelId, setYtChannelId] = useState<string | null>(null);
   const [ytLinksMap, setYtLinksMap] = useState<Record<string, { m?: string; v?: string; vt?: string }>>({});
   const [activeTab, setActiveTab] = useState<Tab>('songs');
@@ -107,11 +130,10 @@ export default function ArtistPage() {
 
     async function load() {
       try {
-        const [artistData, chartingData, albumChartingData, marketData, channelsData, ytData] = await Promise.all([
+        const [artistData, chartingData, albumChartingData, channelsData, ytData] = await Promise.all([
           getArtist<ArtistEntity>(id),
           getChartingArtists<Record<string, ChartingArtistData>>(),
           getChartingAlbums<Record<string, ChartingAlbumData | ChartingAlbumEntry['positions']>>(),
-          getMarketStreams().catch(() => ({} as Record<string, number>)),
           getArtistChannels().catch(() => ({} as Record<string, string>)),
           getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
         ]);
@@ -124,9 +146,7 @@ export default function ArtistPage() {
         const data = chartingData[uri];
         if (data?.songs) {
           const sorted = [...data.songs].sort((a: ChartingSong, b: ChartingSong) => {
-            const aStreams = a.positions.reduce((sum: number, p: { streams: number }) => sum + p.streams, 0);
-            const bStreams = b.positions.reduce((sum: number, p: { streams: number }) => sum + p.streams, 0);
-            return bStreams - aStreams;
+            return getSongDisplayStreams(b) - getSongDisplayStreams(a);
           });
           setSongs(sorted);
         }
@@ -164,7 +184,6 @@ export default function ArtistPage() {
         });
         setArtistAlbums(matchingAlbums);
 
-        setMktStreams(marketData);
         setYtLinksMap(ytData);
 
         // Find YouTube channel
@@ -188,7 +207,7 @@ export default function ArtistPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen pb-24 px-4 pt-6">
+      <main className="min-h-screen px-4 pt-6">
         <div className="mx-auto max-w-2xl space-y-6">
           <div className="w-20 h-4 bg-zinc-800 rounded animate-pulse" />
           <div className="flex flex-col items-center gap-4">
@@ -216,7 +235,7 @@ export default function ArtistPage() {
 
   // Aggregate stats
   const totalCountries = new Set(songs.flatMap(s => s.positions.map(p => p.country))).size;
-  const totalStreams = songs.reduce((sum, s) => sum + s.positions.reduce((ss, p) => ss + p.streams, 0), 0);
+  const totalStreams = songs.reduce((sum, song) => sum + getSongDisplayStreams(song), 0);
 
   const TABS: { key: Tab; label: string; count: number }[] = [
     { key: 'songs', label: 'Songs', count: songs.length },
@@ -228,7 +247,7 @@ export default function ArtistPage() {
   const heroVideoSrc = heroSourceSong ? getHeroVideoUrl(extractId(heroSourceSong.track_uri)) : null;
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen">
       <VideoHero
         videoSrc={heroVideoSrc}
         className="mb-8"
@@ -351,9 +370,8 @@ export default function ArtistPage() {
               <div className="divide-y divide-zinc-800/40">
                 {songs.map((song) => {
                   const trackId = extractId(song.track_uri);
-                  const songStreams = song.positions.reduce((sum, p) => sum + p.streams, 0);
-                  const globalPos = song.positions.find(p => p.country === 'global');
-                  const featuredPos = globalPos || [...song.positions].sort((a, b) => (mktStreams[b.country] || 0) - (mktStreams[a.country] || 0))[0];
+                  const songStreams = getSongDisplayStreams(song);
+                  const featuredPos = getTopCountryPosition(song);
 
                   return (
                     <Link

@@ -79,7 +79,7 @@ export default function AlbumPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen pb-24 px-4 pt-6">
+      <main className="min-h-screen px-4 pt-6">
         <div className="mx-auto max-w-2xl space-y-6">
           <div className="w-20 h-4 bg-zinc-800 rounded animate-pulse" />
           <div className="flex flex-col items-center gap-4">
@@ -115,7 +115,7 @@ export default function AlbumPage() {
   const maxWeeks = positions.length > 0 ? Math.max(...positions.map(p => p.weeks_on_chart)) : null;
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen">
       <div className="mx-auto max-w-2xl px-4 pt-6 space-y-8">
         {/* Back */}
         <button
@@ -201,11 +201,11 @@ export default function AlbumPage() {
             href={`https://open.spotify.com/album/${id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-zinc-800/60 text-zinc-200 hover:bg-zinc-700 transition"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-600/20 text-green-400 hover:bg-green-600/30 transition"
             title="Spotify"
             aria-label="Open in Spotify"
           >
-            <SpotifyIcon size={18} />
+            <SpotifyIcon size={20} />
           </a>
         </div>
 

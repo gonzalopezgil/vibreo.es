@@ -13,7 +13,7 @@ export default function CountryChartRedirect() {
   }, [country, router]);
 
   return (
-    <main className="min-h-screen pb-24 px-4 pt-6">
+    <main className="min-h-screen px-4 pt-6">
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="w-20 h-4 bg-zinc-800 rounded animate-pulse" />
         {Array.from({ length: 8 }).map((_, i) => (

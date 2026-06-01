@@ -150,7 +150,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <main className="flex flex-col gap-8 min-h-screen pb-24">
+      <main className="flex flex-col gap-8 min-h-screen">
         <HeroSkeleton />
         <section className="px-4 w-full max-w-3xl mx-auto">
           <div className="w-36 h-5 bg-zinc-800 rounded animate-pulse mb-3" />

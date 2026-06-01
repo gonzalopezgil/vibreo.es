@@ -248,7 +248,7 @@ export default function ChartTypeDatePage() {
   const columnHeader = chartType === 'songs' ? 'Streams' : chartType === 'artists' ? 'Days' : 'Weeks';
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen">
       <VideoHero
         videoSrc={heroVideoSrc}
         className="mb-2 z-20"
