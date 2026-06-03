@@ -135,7 +135,7 @@ export function DatePicker({ selectedDate, availableDates, chartType, onSelect, 
   }
 
   return (
-    <div ref={ref} className="inline-flex flex-col items-start">
+    <div ref={ref} className="relative inline-flex items-start">
       <button
         onClick={() => setOpen(!open)}
         className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition"
@@ -145,7 +145,7 @@ export function DatePicker({ selectedDate, availableDates, chartType, onSelect, 
       </button>
 
       {open && (
-        <div className="relative z-[100] mt-2 w-[280px] rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
+        <div className="absolute left-0 top-full z-[100] mt-2 w-[280px] rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-2xl">
           {/* Month nav */}
           <div className="flex items-center justify-between mb-2">
             <button onClick={prevMonth} className="p-1 text-zinc-400 hover:text-zinc-100 transition">

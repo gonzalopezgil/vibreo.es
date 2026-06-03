@@ -313,7 +313,7 @@ export default function Home() {
       </section>
 
       {/* ─── Section 3: Top Debuts ─────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-3xl px-4">
+      <section className="mx-auto mt-8 w-full max-w-3xl px-4 sm:mt-10">
         <SectionHeader title={`Top Debuts ${debutsTitle}`} subtitle={debutsSubtitle} icon={Music} />
 
         {debuts.length === 0 ? (
@@ -358,7 +358,7 @@ export default function Home() {
 
       {/* ─── Section 4: Biggest Movers ─────────────────────────────── */}
       {movers.length > 0 && (
-        <section className="mx-auto w-full max-w-3xl min-h-0 px-0 sm:px-4 pb-4">
+        <section className="mx-auto mt-8 w-full max-w-3xl min-h-0 px-0 pb-4 sm:mt-10 sm:px-4">
           <div className="px-4 sm:px-0">
             <SectionHeader title="Biggest Movers" subtitle="Climbing the charts" icon={TrendingUp} />
           </div>

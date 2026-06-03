@@ -181,6 +181,28 @@ describe('DatePicker', () => {
 
     expect(onSelect).toHaveBeenCalledWith('2026-04-16');
   });
+
+  it('renders the calendar popover out of normal layout flow', () => {
+    render(
+      <DatePicker
+        selectedDate="2026-04-20"
+        availableDates={new Set(['2026-04-20'])}
+        chartType="songs"
+        onSelect={jest.fn()}
+        displayText="Apr 20"
+      />,
+    );
+
+    const trigger = screen.getByRole('button', { name: /apr 20/i });
+    const wrapper = trigger.parentElement;
+
+    expect(wrapper).toHaveClass('relative');
+
+    fireEvent.click(trigger);
+
+    const panel = screen.getByText('April 2026').parentElement?.parentElement;
+    expect(panel).toHaveClass('absolute', 'left-0', 'top-full', 'z-[100]');
+  });
 });
 
 describe('modal, icons and video hero', () => {
