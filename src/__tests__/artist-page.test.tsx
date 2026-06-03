@@ -81,7 +81,7 @@ describe('ArtistPage', () => {
     ));
   });
 
-  it('uses global streams for globally charting songs while keeping market count and top country rank', async () => {
+  it('uses the global rank for globally charting songs', async () => {
     mockedGetChartingArtists.mockResolvedValue({
       'spotify:artist:ariana': {
         songs: [
@@ -103,10 +103,35 @@ describe('ArtistPage', () => {
     render(<ArtistPage />);
 
     expect(await screen.findByText('hate that i made you love me')).toBeInTheDocument();
-    expect(screen.getByText('5.5M · 3 markets · #3 USA')).toBeInTheDocument();
+    expect(screen.getByText('5.5M · 3 markets · #2 Global')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.queryByText(/10\.4M/)).not.toBeInTheDocument();
     });
+  });
+
+  it('uses the highest-streaming country rank when a song is not charting globally', async () => {
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [
+          {
+            track_uri: 'spotify:track:local-song',
+            track_name: 'local song',
+            image_url: 'https://i.scdn.co/image/local-song.jpg',
+            positions: [
+              { country: 'gb', rank: 2, streams: 500_000 },
+              { country: 'us', rank: 12, streams: 1_000_000 },
+              { country: 'br', rank: 20, streams: 1_400_000 },
+            ],
+          },
+        ],
+        positions: [],
+      },
+    });
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByText('local song')).toBeInTheDocument();
+    expect(screen.getByText('2.9M · 3 markets · #20 Brazil')).toBeInTheDocument();
   });
 });

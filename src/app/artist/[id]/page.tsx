@@ -71,11 +71,13 @@ function getSongDisplayStreams(song: ChartingSong) {
   return globalPos?.streams ?? song.positions.reduce((sum, position) => sum + position.streams, 0);
 }
 
-function getTopCountryPosition(song: ChartingSong) {
+function getFeaturedSongPosition(song: ChartingSong) {
+  const globalPosition = song.positions.find((position) => position.country === 'global');
+  if (globalPosition) return globalPosition;
+
   let topCountryPosition: ChartingSongPosition | undefined;
 
   for (const position of song.positions) {
-    if (position.country === 'global') continue;
     if (!topCountryPosition || position.streams > topCountryPosition.streams) {
       topCountryPosition = position;
     }
@@ -371,7 +373,7 @@ export default function ArtistPage() {
                 {songs.map((song) => {
                   const trackId = extractId(song.track_uri);
                   const songStreams = getSongDisplayStreams(song);
-                  const featuredPos = getTopCountryPosition(song);
+                  const featuredPos = getFeaturedSongPosition(song);
 
                   return (
                     <Link
