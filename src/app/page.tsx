@@ -8,7 +8,7 @@ import { getChartSongsDaily, getLatest, getYouTubeLinks, getHeroVideoUrl, getErr
 import { formatStreams } from '@/lib/format';
 import { ChartRowExpandable, DetailCard as DebutDetailCard, AlbumThumb, type ChartEntry } from '@/components/ChartRow';
 import { ImageModal } from '@/components/ImageModal';
-import { VideoHero, VIDEO_HERO_BOTTOM_FADE_CLASS } from '@/components/VideoHero';
+import { VideoHero } from '@/components/VideoHero';
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 
@@ -189,7 +189,7 @@ export default function Home() {
         <section className="relative">
           <VideoHero
             videoSrc={heroVideoSrc}
-            className={`min-h-[calc(100svh-3.5rem)] ${VIDEO_HERO_BOTTOM_FADE_CLASS}`}
+            className="min-h-[calc(100svh-3.5rem)]"
             overlayClassName="bg-gradient-to-b from-black/55 via-black/35 to-zinc-950/90"
             fallbackClassName="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950"
             fallbackMedia={hero.image_url ? (

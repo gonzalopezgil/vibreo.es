@@ -269,6 +269,62 @@ describe('modal, icons and video hero', () => {
     expect(section.querySelector('video')).not.toBeInTheDocument();
     expect(screen.getByAltText('Fallback cover')).toBeInTheDocument();
   });
+
+  it('applies the bottom fade to every video hero by default', () => {
+    render(
+      <VideoHero label="Fallback hero">
+        <h1>Fallback Only</h1>
+      </VideoHero>,
+    );
+
+    const section = screen.getByLabelText('Fallback hero');
+
+    expect(section).toHaveClass('after:bg-gradient-to-b');
+    expect(section).toHaveClass('after:via-zinc-950/75');
+    expect(section).toHaveClass('after:to-zinc-950');
+    expect(section).toHaveClass('md:after:h-48');
+  });
+
+  it('keeps the dark overlay when rendering placeholder media without a video', () => {
+    render(
+      <VideoHero
+        label="Placeholder hero"
+        overlayClassName="custom-placeholder-overlay"
+        fallbackMedia={
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/cover.jpg" alt="Fallback cover" />
+        }
+      >
+        <h1>Placeholder Only</h1>
+      </VideoHero>,
+    );
+
+    const section = screen.getByLabelText('Placeholder hero');
+
+    expect(section.querySelector('video')).not.toBeInTheDocument();
+    expect(section.querySelector('.custom-placeholder-overlay')).toHaveClass('pointer-events-none');
+  });
+
+  it('clips placeholder media even when the hero allows popovers to overflow', () => {
+    render(
+      <VideoHero
+        label="Overflow hero"
+        allowOverflow
+        fallbackMedia={
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/cover.jpg" alt="Scaled fallback cover" className="scale-110 blur-3xl" />
+        }
+      >
+        <h1>Chart controls</h1>
+      </VideoHero>,
+    );
+
+    const section = screen.getByLabelText('Overflow hero');
+    const fallbackLayer = screen.getByAltText('Scaled fallback cover').parentElement;
+
+    expect(section).toHaveClass('overflow-visible');
+    expect(fallbackLayer).toHaveClass('overflow-hidden');
+  });
 });
 
 describe('useInView', () => {

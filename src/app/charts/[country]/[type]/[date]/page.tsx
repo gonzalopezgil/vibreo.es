@@ -16,6 +16,7 @@ import {
   getChartSongsDaily,
   getChartArtistsDaily,
   getChartAlbumsWeekly,
+  getChartingArtists,
   getLatest,
   getMarketStreams,
   getYouTubeLinks,
@@ -26,6 +27,16 @@ import { COUNTRY_CODES, getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
 
 type ChartType = 'songs' | 'artists' | 'albums';
+
+interface ChartingArtistSong {
+  track_uri: string;
+  track_name: string;
+  image_url: string;
+}
+
+type ChartingArtistData = {
+  songs?: ChartingArtistSong[];
+};
 
 const CHART_TABS: { type: ChartType; label: string }[] = [
   { type: 'songs', label: 'Songs' },
@@ -65,6 +76,10 @@ function chartSubtitle(type: ChartType) {
   if (type === 'songs') return 'Songs Top 200';
   if (type === 'artists') return 'Artists Top 200';
   return 'Albums Top 200';
+}
+
+function extractId(uri: string) {
+  return uri.split(':').pop() || uri;
 }
 
 function SkeletonRow({ index }: { index: number }) {
@@ -107,6 +122,7 @@ export default function ChartTypeDatePage() {
   const [expandedUri, setExpandedUri] = useState<string | null>(null);
   const [totalStreams, setTotalStreams] = useState<number | null>(null);
   const [ytLinksMap, setYtLinksMap] = useState<Record<string, { m?: string; v?: string; vt?: string }>>({});
+  const [artistHeroSongs, setArtistHeroSongs] = useState<ChartingArtistSong[]>([]);
   const [filterQuery, setFilterQuery] = useState('');
 
   // Build available dates set from latest (for now, generate a range going back)
@@ -195,14 +211,20 @@ export default function ChartTypeDatePage() {
           if (streams[currentCountry]) setTotalStreams(streams[currentCountry]);
           else setTotalStreams(null);
           setYtLinksMap(ytData);
+          setArtistHeroSongs([]);
         } else if (chartType === 'artists') {
-          const chartData = await getChartArtistsDaily(currentCountry, dateParam);
+          const [chartData, chartingArtistsData, ytData] = await Promise.all([
+            getChartArtistsDaily(currentCountry, dateParam),
+            getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
+            getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
+          ]);
           if (cancelled) return;
           setArtists(chartData);
           setSongs([]);
           setAlbums([]);
           setTotalStreams(null);
-          setYtLinksMap({});
+          setYtLinksMap(ytData);
+          setArtistHeroSongs(chartingArtistsData[chartData[0]?.uri || '']?.songs || []);
         } else {
           const chartData = await getChartAlbumsWeekly(currentCountry, dateParam);
           if (cancelled) return;
@@ -211,6 +233,7 @@ export default function ChartTypeDatePage() {
           setArtists([]);
           setTotalStreams(null);
           setYtLinksMap({});
+          setArtistHeroSongs([]);
         }
       } catch (err: unknown) {
         if (!cancelled) setError(getErrorMessage(err, 'Failed to load chart'));
@@ -225,15 +248,42 @@ export default function ChartTypeDatePage() {
 
   const hasData = songs.length > 0 || artists.length > 0 || albums.length > 0;
 
-  // Hero video for #1 song
-  const numberOne = chartType === 'songs' ? songs[0] || null : null;
+  // Hero video for #1 song or a linked song from the #1 artist
+  const numberOneSong = chartType === 'songs' ? songs[0] || null : null;
+  const numberOneArtist = chartType === 'artists' ? artists[0] || null : null;
+  const artistHeroSourceSong = numberOneArtist
+    ? artistHeroSongs.find((song) => ytLinksMap[song.track_uri]?.v) || null
+    : null;
   const heroVideoSrc = (() => {
-    if (!numberOne) return null;
-    const yt = ytLinksMap[numberOne.uri];
-    if (!yt?.v) return null;
-    const trackId = numberOne.uri.split(':').pop() || '';
+    if (numberOneSong) {
+      const yt = ytLinksMap[numberOneSong.uri];
+      if (!yt?.v) return null;
+      return getHeroVideoUrl(extractId(numberOneSong.uri));
+    }
+    if (!artistHeroSourceSong) return null;
+    const trackId = extractId(artistHeroSourceSong.track_uri);
     return getHeroVideoUrl(trackId);
   })();
+  const heroFallbackImageUrl = numberOneSong?.image_url || numberOneArtist?.image_url || '';
+  const heroHighlight = heroVideoSrc
+    ? numberOneSong
+      ? {
+          imageUrl: numberOneSong.image_url,
+          imageAlt: numberOneSong.track_name,
+          title: numberOneSong.track_name,
+          subtitle: numberOneSong.artist_names.split('|').join(', '),
+          imageClassName: 'rounded-lg shadow-lg',
+        }
+      : numberOneArtist
+        ? {
+            imageUrl: numberOneArtist.image_url,
+            imageAlt: numberOneArtist.artist_name,
+            title: numberOneArtist.artist_name,
+            subtitle: 'Artist chart #1',
+            imageClassName: 'rounded-full object-cover shadow-lg',
+          }
+        : null
+    : null;
 
   const handleDateSelect = (date: string) => {
     router.push(`/charts/${currentCountry}/${chartType}/${date}`);
@@ -255,9 +305,9 @@ export default function ChartTypeDatePage() {
         allowOverflow
         fallbackClassName="bg-zinc-950"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
-        fallbackMedia={numberOne?.image_url ? (
+        fallbackMedia={heroFallbackImageUrl ? (
           <Image
-            src={numberOne.image_url}
+            src={heroFallbackImageUrl}
             alt=""
             fill
             sizes="100vw"
@@ -326,22 +376,22 @@ export default function ChartTypeDatePage() {
               )}
             </div>
 
-            {/* #1 track info when video is playing */}
-            {heroVideoSrc && numberOne && (
+            {/* #1 entry info when video is playing */}
+            {heroHighlight && (
               <div className="mt-4 flex items-center gap-3">
-                {numberOne.image_url && (
+                {heroHighlight.imageUrl && (
                   <Image
-                    src={numberOne.image_url}
-                    alt={numberOne.track_name}
+                    src={heroHighlight.imageUrl}
+                    alt={heroHighlight.imageAlt}
                     width={48}
                     height={48}
-                    className="rounded-lg shadow-lg"
+                    className={heroHighlight.imageClassName}
                   />
                 )}
                 <div>
                   <p className="text-xs text-zinc-400">#1 right now</p>
-                  <p className="text-sm font-bold text-zinc-100">{numberOne.track_name}</p>
-                  <p className="text-xs text-zinc-400">{numberOne.artist_names.split('|').join(', ')}</p>
+                  <p className="text-sm font-bold text-zinc-100">{heroHighlight.title}</p>
+                  <p className="text-xs text-zinc-400">{heroHighlight.subtitle}</p>
                 </div>
               </div>
             )}

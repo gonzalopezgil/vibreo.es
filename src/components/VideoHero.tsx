@@ -100,12 +100,12 @@ export function VideoHero({
   return (
     <section
       aria-label={label}
-      className={`relative ${allowOverflow ? 'overflow-visible' : 'overflow-hidden'} ${className}`}
+      className={`relative ${allowOverflow ? 'overflow-visible' : 'overflow-hidden'} ${VIDEO_HERO_BOTTOM_FADE_CLASS} ${className}`}
     >
       {/* ── Background layer ──────────────────────────────────── */}
       {/* Fallback gradient — always rendered, hidden by video once ready */}
       <div
-        className={`absolute inset-0 ${fallbackClassName} transition-opacity duration-700 ${
+        className={`absolute inset-0 overflow-hidden ${fallbackClassName} transition-opacity duration-700 ${
           hasVideo && videoReady ? 'opacity-0' : 'opacity-100'
         }`}
         aria-hidden="true"
@@ -131,13 +131,11 @@ export function VideoHero({
         />
       )}
 
-      {/* ── Dark gradient overlay (always present on top of video) ── */}
-      {hasVideo && (
-        <div
-          className={`absolute inset-0 ${overlayClassName} pointer-events-none`}
-          aria-hidden="true"
-        />
-      )}
+      {/* ── Dark gradient overlay, shared by video and placeholder states ── */}
+      <div
+        className={`absolute inset-0 ${overlayClassName} pointer-events-none`}
+        aria-hidden="true"
+      />
 
       {/* ── Content ───────────────────────────────────────────── */}
       <div className="relative z-10">{children}</div>
