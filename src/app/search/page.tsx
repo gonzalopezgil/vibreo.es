@@ -260,10 +260,8 @@ export default function SearchPage() {
         {results && (results.topResult || results.artists.length || results.songs.length || results.albums.length) && (
           <div className="space-y-8">
             {results.topResult && <TopResultCard item={results.topResult} />}
-            <div className="grid min-w-0 gap-8 lg:grid-cols-2">
-              <ResultSection title="Songs" items={sections.songs} />
-              <ResultSection title="Artists" items={sections.artists} />
-            </div>
+            <ResultSection title="Songs" items={sections.songs} />
+            <ResultSection title="Artists" items={sections.artists} />
             <ResultSection title="Albums" items={sections.albums} />
           </div>
         )}
