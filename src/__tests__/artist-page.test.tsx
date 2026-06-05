@@ -64,6 +64,16 @@ const mockedGetYouTubeLinks = jest.mocked(getYouTubeLinks);
 const mockedGetHeroVideoUrl = jest.mocked(getHeroVideoUrl);
 const mockedGetErrorMessage = jest.mocked(getErrorMessage);
 
+function expectHeroBottomFade(hero: Element | null) {
+  expect(hero).not.toBeNull();
+  const className = hero?.className || '';
+
+  expect(className).toEqual(expect.stringContaining('after:bg-gradient-to-b'));
+  expect(className).toEqual(expect.stringContaining('after:via-zinc-950/75'));
+  expect(className).toEqual(expect.stringContaining('after:to-zinc-950'));
+  expect(className).toEqual(expect.stringContaining('md:after:h-48'));
+}
+
 describe('ArtistPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -79,6 +89,31 @@ describe('ArtistPage', () => {
     mockedGetErrorMessage.mockImplementation((error: unknown, fallback: string) => (
       error instanceof Error ? error.message : fallback
     ));
+  });
+
+  it('applies the bottom fade to the artist video hero', async () => {
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [
+          {
+            track_uri: 'spotify:track:hate-that',
+            track_name: 'hate that i made you love me',
+            image_url: 'https://i.scdn.co/image/hate-that.jpg',
+            positions: [{ country: 'global', rank: 2, streams: 5_452_802 }],
+          },
+        ],
+        positions: [],
+      },
+    });
+    mockedGetYouTubeLinks.mockResolvedValue({
+      'spotify:track:hate-that': { v: 'video-id' },
+    });
+
+    render(<ArtistPage />);
+
+    const heading = await screen.findByRole('heading', { name: 'Ariana Grande' });
+
+    expectHeroBottomFade(heading.closest('section'));
   });
 
   it('uses the global rank for globally charting songs', async () => {

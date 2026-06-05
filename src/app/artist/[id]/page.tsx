@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Music, User, Disc } from 'lucide-react';
 import { SpotifyIcon, YouTubeMusicIcon } from '@/components/PlatformIcons';
 import { ImageModal } from '@/components/ImageModal';
-import { VideoHero } from '@/components/VideoHero';
+import { VideoHero, VIDEO_HERO_BOTTOM_FADE_CLASS } from '@/components/VideoHero';
 import { getArtist, getChartingArtists, getChartingAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
 import { FlagIcon } from '@/components/FlagIcon';
 import { getCountryName } from '@/lib/countries';
@@ -252,7 +252,7 @@ export default function ArtistPage() {
     <main className="min-h-screen">
       <VideoHero
         videoSrc={heroVideoSrc}
-        className="mb-8"
+        className={`mb-8 ${VIDEO_HERO_BOTTOM_FADE_CLASS}`}
         fallbackClassName="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
         fallbackMedia={artist.image_url ? (

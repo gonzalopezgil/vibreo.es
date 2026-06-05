@@ -15,6 +15,8 @@
 
 import { useRef, useState, useEffect, type ReactNode } from 'react';
 
+export const VIDEO_HERO_BOTTOM_FADE_CLASS = "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-[5] after:h-36 after:bg-gradient-to-b after:from-transparent after:via-zinc-950/75 after:to-zinc-950 after:content-[''] md:after:h-48";
+
 interface VideoHeroProps {
   /** Path to the MP4 video file (relative to /public, e.g. "/videos/hero-babydoll.mp4") */
   videoSrc?: string | null;
