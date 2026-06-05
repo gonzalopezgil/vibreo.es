@@ -100,6 +100,23 @@ function SkeletonRow({ index }: { index: number }) {
   );
 }
 
+function HeroHighlightSkeleton() {
+  return (
+    <div
+      data-testid="chart-hero-highlight"
+      aria-hidden="true"
+      className="mt-4 flex min-h-[52px] items-center gap-3"
+    >
+      <div className="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-zinc-800/80" />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="h-3 w-20 animate-pulse rounded bg-zinc-800/80" />
+        <div className="h-3.5 w-36 animate-pulse rounded bg-zinc-800/80" />
+        <div className="h-3 w-24 animate-pulse rounded bg-zinc-800/80" />
+      </div>
+    </div>
+  );
+}
+
 export default function ChartTypeDatePage() {
   const params = useParams<{ country: string; type: string; date: string }>();
   const router = useRouter();
@@ -265,25 +282,23 @@ export default function ChartTypeDatePage() {
     return getHeroVideoUrl(trackId);
   })();
   const heroFallbackImageUrl = numberOneSong?.image_url || numberOneArtist?.image_url || '';
-  const heroHighlight = heroVideoSrc
-    ? numberOneSong
+  const heroHighlight = numberOneSong
+    ? {
+        imageUrl: numberOneSong.image_url,
+        imageAlt: numberOneSong.track_name,
+        title: numberOneSong.track_name,
+        subtitle: numberOneSong.artist_names.split('|').join(', '),
+        imageClassName: 'rounded-lg shadow-lg',
+      }
+    : numberOneArtist
       ? {
-          imageUrl: numberOneSong.image_url,
-          imageAlt: numberOneSong.track_name,
-          title: numberOneSong.track_name,
-          subtitle: numberOneSong.artist_names.split('|').join(', '),
-          imageClassName: 'rounded-lg shadow-lg',
+          imageUrl: numberOneArtist.image_url,
+          imageAlt: numberOneArtist.artist_name,
+          title: numberOneArtist.artist_name,
+          subtitle: 'Artist chart #1',
+          imageClassName: 'rounded-full object-cover shadow-lg',
         }
-      : numberOneArtist
-        ? {
-            imageUrl: numberOneArtist.image_url,
-            imageAlt: numberOneArtist.artist_name,
-            title: numberOneArtist.artist_name,
-            subtitle: 'Artist chart #1',
-            imageClassName: 'rounded-full object-cover shadow-lg',
-          }
-        : null
-    : null;
+      : null;
 
   const handleDateSelect = (date: string) => {
     router.push(`/charts/${currentCountry}/${chartType}/${date}`);
@@ -301,7 +316,7 @@ export default function ChartTypeDatePage() {
     <main className="min-h-screen">
       <VideoHero
         videoSrc={heroVideoSrc}
-        className="mb-2 z-20"
+        className="z-20"
         allowOverflow
         fallbackClassName="bg-zinc-950"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
@@ -313,10 +328,11 @@ export default function ChartTypeDatePage() {
             sizes="100vw"
             className="blur-3xl scale-110 opacity-35 object-cover absolute inset-0 z-0"
             aria-hidden="true"
+            priority
           />
         ) : null}
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pt-8 pb-8">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pt-8 pb-5">
           <div className="flex items-center justify-between gap-3">
             <Link
               href="/charts"
@@ -376,9 +392,11 @@ export default function ChartTypeDatePage() {
               )}
             </div>
 
-            {/* #1 entry info when video is playing */}
-            {heroHighlight && (
-              <div className="mt-4 flex items-center gap-3">
+            {/* #1 entry info */}
+            {loading && isValidCountry ? (
+              <HeroHighlightSkeleton />
+            ) : heroHighlight && (
+              <div data-testid="chart-hero-highlight" className="mt-4 flex min-h-[52px] items-center gap-3">
                 {heroHighlight.imageUrl && (
                   <Image
                     src={heroHighlight.imageUrl}
@@ -386,6 +404,7 @@ export default function ChartTypeDatePage() {
                     width={48}
                     height={48}
                     className={heroHighlight.imageClassName}
+                    priority
                   />
                 )}
                 <div>

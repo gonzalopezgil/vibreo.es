@@ -92,6 +92,18 @@ const searchResponse = {
   },
 };
 
+const emptySearchResponse = {
+  query: 'perfecto miserable',
+  topResult: null,
+  artists: [],
+  songs: [],
+  albums: [],
+  meta: {
+    interpretedIntent: 'mixed' as const,
+    totalCandidates: 0,
+  },
+};
+
 describe('SearchPage', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -127,5 +139,20 @@ describe('SearchPage', () => {
     expect(artistsSection?.parentElement).toBe(resultStack);
     expect(albumsSection?.parentElement).toBe(resultStack);
     expect(resultStack).not.toHaveClass('lg:grid-cols-2');
+  });
+
+  it('does not render a stray zero when a search has no results', async () => {
+    mockedSearchAll.mockResolvedValue(emptySearchResponse);
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    render(<SearchPage />);
+
+    await user.type(screen.getByPlaceholderText('Search songs, artists or albums'), 'perfecto miserable');
+    await act(async () => {
+      jest.advanceTimersByTime(200);
+    });
+
+    await waitFor(() => expect(mockedSearchAll).toHaveBeenCalledWith('perfecto miserable'));
+    expect(await screen.findByText('No results for “perfecto miserable”.')).toBeInTheDocument();
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 });

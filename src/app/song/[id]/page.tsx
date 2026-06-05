@@ -15,6 +15,7 @@ import { formatStreams } from '@/lib/format';
 
 interface SongEntity {
   track_uri: string;
+  primary_uri?: string;
   track_name: string;
   artist_names: string;
   artist_uris: string;
@@ -78,14 +79,15 @@ export default function SongPage() {
         if (cancelled) return;
         setSong(songData);
 
-        const uri = `spotify:track:${id}`;
-        const pos: ChartPosition[] = chartingData[uri] || [];
+        const routeUri = `spotify:track:${id}`;
+        const primaryUri = songData.primary_uri || songData.track_uri || routeUri;
+        const pos: ChartPosition[] = chartingData[primaryUri] || chartingData[songData.track_uri] || chartingData[routeUri] || [];
         // Sort by streams descending (biggest markets first)
         pos.sort((a: ChartPosition, b: ChartPosition) => b.streams - a.streams);
         setPositions(pos);
 
         // YouTube links
-        if (ytData[uri]) setYtLinks(ytData[uri]);
+        setYtLinks(ytData[primaryUri] || ytData[songData.track_uri] || ytData[routeUri] || null);
         setMarketStreams(mktStreams);
       } catch (err: unknown) {
         if (!cancelled) setError(getErrorMessage(err, 'Failed to load song'));
@@ -150,7 +152,9 @@ export default function SongPage() {
     })[0];
   })();
 
-  const heroVideoSrc = ytLinks?.v ? getHeroVideoUrl(id) : null;
+  const primaryTrackUri = song.primary_uri || song.track_uri || `spotify:track:${id}`;
+  const primaryTrackId = extractId(primaryTrackUri);
+  const heroVideoSrc = ytLinks?.v ? getHeroVideoUrl(primaryTrackId) : null;
 
   return (
     <main className="min-h-screen">
@@ -233,7 +237,7 @@ export default function SongPage() {
             {/* External links */}
             <div className="flex gap-2 justify-center">
               <a
-                href={`https://open.spotify.com/track/${id}`}
+                href={`https://open.spotify.com/track/${primaryTrackId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-600/20 text-green-400 hover:bg-green-600/30 transition"

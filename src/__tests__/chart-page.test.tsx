@@ -1,5 +1,5 @@
 import type React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import ChartTypeDatePage from '@/app/charts/[country]/[type]/[date]/page';
 import {
   getChartAlbumsWeekly,
@@ -133,6 +133,33 @@ describe('ChartTypeDatePage', () => {
     expectHeroBottomFade(heading.closest('section'));
   });
 
+  it('keeps the filter search spacing tight before the table', async () => {
+    render(<ChartTypeDatePage />);
+
+    const filter = await screen.findByPlaceholderText('Filter by song or artist');
+    const hero = filter.closest('section');
+    const heroContent = filter.closest('.mx-auto');
+
+    expect(hero).not.toHaveClass('mb-2');
+    expect(heroContent).toHaveClass('gap-5');
+    expect(heroContent).toHaveClass('pb-5');
+    expect(heroContent).not.toHaveClass('pb-8');
+  });
+
+  it('reserves the #1 highlight slot while chart data is loading', () => {
+    mockedGetLatest.mockReturnValue(new Promise(() => {}));
+
+    render(<ChartTypeDatePage />);
+
+    const heading = screen.getByRole('heading', { name: 'Global' });
+    const hero = heading.closest('section');
+    const heroSlot = hero?.querySelector('[data-testid="chart-hero-highlight"]');
+
+    expect(heroSlot).toBeInTheDocument();
+    expect(heroSlot).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryByText('#1 right now')).not.toBeInTheDocument();
+  });
+
   it('uses a video from the #1 artist when the artists chart has a linked song video', async () => {
     mockParams = { country: 'global', type: 'artists', date: 'latest' };
     mockedGetChartArtistsDaily.mockResolvedValue([
@@ -179,7 +206,9 @@ describe('ChartTypeDatePage', () => {
     const heading = await screen.findByRole('heading', { name: 'Global' });
     const hero = heading.closest('section');
 
-    expect(hero?.querySelector('video')).toHaveAttribute('src', '/hero.mp4');
+    await waitFor(() => {
+      expect(hero?.querySelector('video')).toHaveAttribute('src', '/hero.mp4');
+    });
     expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('hate-that');
   });
 });

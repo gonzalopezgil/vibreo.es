@@ -218,6 +218,16 @@ export default function SearchPage() {
     };
   }, [results, topKey]);
 
+  const hasResults = Boolean(
+    results && (
+      results.topResult
+      || results.artists.length > 0
+      || results.songs.length > 0
+      || results.albums.length > 0
+    ),
+  );
+  const hasNoResults = Boolean(results && !hasResults && !loading);
+
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -251,13 +261,13 @@ export default function SearchPage() {
           </div>
         )}
 
-        {results && !results.topResult && !results.artists.length && !results.songs.length && !results.albums.length && !loading && (
+        {hasNoResults && (
           <div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 px-5 py-8 text-sm text-zinc-500">
             No results for “{query.trim()}”.
           </div>
         )}
 
-        {results && (results.topResult || results.artists.length || results.songs.length || results.albums.length) && (
+        {results && hasResults && (
           <div className="space-y-8">
             {results.topResult && <TopResultCard item={results.topResult} />}
             <ResultSection title="Songs" items={sections.songs} />

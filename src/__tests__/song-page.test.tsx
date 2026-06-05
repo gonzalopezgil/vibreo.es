@@ -10,8 +10,10 @@ import {
   getYouTubeLinks,
 } from '@/lib/api';
 
+let mockSongId = 'hate-that';
+
 jest.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'hate-that' }),
+  useParams: () => ({ id: mockSongId }),
   useRouter: () => ({ back: jest.fn() }),
 }));
 
@@ -74,6 +76,7 @@ function expectHeroBottomFade(hero: Element | null) {
 describe('SongPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSongId = 'hate-that';
     mockedGetSong.mockResolvedValue({
       track_uri: 'spotify:track:hate-that',
       track_name: 'hate that i made you love me',
@@ -104,5 +107,35 @@ describe('SongPage', () => {
     const heading = await screen.findByRole('heading', { name: 'hate that i made you love me' });
 
     expectHeroBottomFade(heading.closest('section'));
+  });
+
+  it('uses the primary Spotify URI for alias song charting and hero video data', async () => {
+    mockSongId = 'alias-track';
+    mockedGetSong.mockResolvedValue({
+      track_uri: 'spotify:track:alias-track',
+      primary_uri: 'spotify:track:primary-track',
+      track_name: 'back to friends',
+      artist_names: 'sombr',
+      artist_uris: 'spotify:artist:sombr',
+      label: 'Warner Records',
+      release_date: '2024-12-27',
+      image_url: 'https://i.scdn.co/image/back-to-friends.jpg',
+    });
+    mockedGetChartingSongs.mockResolvedValue({
+      'spotify:track:primary-track': [
+        { country: 'global', rank: 7, streams: 1_234_567 },
+      ],
+    });
+    mockedGetYouTubeLinks.mockResolvedValue({
+      'spotify:track:primary-track': { v: 'primary-video' },
+    });
+    mockedGetHeroVideoUrl.mockReturnValue('/primary-hero.mp4');
+
+    render(<SongPage />);
+
+    expect(await screen.findByRole('heading', { name: 'back to friends' })).toBeInTheDocument();
+    expect(screen.getByText('Charting in 1 country')).toBeInTheDocument();
+    expect(screen.getByText('#7 Global')).toBeInTheDocument();
+    expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('primary-track');
   });
 });
