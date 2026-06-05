@@ -417,7 +417,7 @@ export default function ChartTypeDatePage() {
           </header>
 
           {/* Filter within chart */}
-          {!loading && hasData && (
+          {isValidCountry && (loading || hasData) && (
             <div className="relative">
               <Search
                 size={16}
@@ -428,9 +428,10 @@ export default function ChartTypeDatePage() {
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
                 placeholder={filterPlaceholder}
-                className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 pl-10 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-zinc-600"
+                disabled={loading}
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 pl-10 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-500 disabled:opacity-80"
               />
-              {filterQuery && (
+              {filterQuery && !loading && (
                 <button
                   onClick={() => setFilterQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition"

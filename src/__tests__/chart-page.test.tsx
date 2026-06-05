@@ -160,6 +160,18 @@ describe('ChartTypeDatePage', () => {
     expect(screen.queryByText('#1 right now')).not.toBeInTheDocument();
   });
 
+  it('reserves the filter search bar while chart data is loading', () => {
+    mockedGetLatest.mockReturnValue(new Promise(() => {}));
+
+    render(<ChartTypeDatePage />);
+
+    const filter = screen.getByPlaceholderText('Filter by song or artist');
+
+    expect(filter).toBeInTheDocument();
+    expect(filter).toBeDisabled();
+    expect(filter).toHaveValue('');
+  });
+
   it('uses a video from the #1 artist when the artists chart has a linked song video', async () => {
     mockParams = { country: 'global', type: 'artists', date: 'latest' };
     mockedGetChartArtistsDaily.mockResolvedValue([
