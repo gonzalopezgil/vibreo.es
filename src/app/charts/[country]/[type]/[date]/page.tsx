@@ -288,7 +288,7 @@ export default function ChartTypeDatePage() {
         imageAlt: numberOneSong.track_name,
         title: numberOneSong.track_name,
         subtitle: numberOneSong.artist_names.split('|').join(', '),
-        imageClassName: 'rounded-lg shadow-lg',
+        imageClassName: 'h-12 w-12 shrink-0 rounded-lg object-cover shadow-lg',
       }
     : numberOneArtist
       ? {
@@ -296,7 +296,7 @@ export default function ChartTypeDatePage() {
           imageAlt: numberOneArtist.artist_name,
           title: numberOneArtist.artist_name,
           subtitle: 'Artist chart #1',
-          imageClassName: 'rounded-full object-cover shadow-lg',
+          imageClassName: 'h-12 w-12 shrink-0 rounded-full object-cover shadow-lg',
         }
       : null;
 

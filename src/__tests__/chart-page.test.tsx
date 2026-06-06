@@ -1,5 +1,5 @@
 import type React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import ChartTypeDatePage from '@/app/charts/[country]/[type]/[date]/page';
 import {
   getChartAlbumsWeekly,
@@ -222,5 +222,38 @@ describe('ChartTypeDatePage', () => {
       expect(hero?.querySelector('video')).toHaveAttribute('src', '/hero.mp4');
     });
     expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('hate-that');
+  });
+
+  it('keeps the artists chart hero image square for a circular crop', async () => {
+    mockParams = { country: 'global', type: 'artists', date: 'latest' };
+    mockedGetChartArtistsDaily.mockResolvedValue([
+      {
+        rank: 1,
+        uri: 'spotify:artist:ariana',
+        artist_name: 'Ariana Grande',
+        image_url: 'https://i.scdn.co/image/ariana.jpg',
+        peak_rank: 1,
+        previous_rank: 2,
+        days_on_chart: 100,
+        consecutive_days: 20,
+        entry_status: 'STANDARD',
+        peak_date: '2026-06-04',
+        entry_rank: 4,
+        entry_date: '2026-01-01',
+      },
+    ]);
+    mockedGetChartingArtists.mockResolvedValue({});
+    mockedGetYouTubeLinks.mockResolvedValue({});
+
+    render(<ChartTypeDatePage />);
+
+    await screen.findByText('#1 right now');
+    const heroHighlight = screen.getByTestId('chart-hero-highlight');
+    const image = within(heroHighlight).getByAltText('Ariana Grande');
+
+    expect(image).toHaveClass('h-12');
+    expect(image).toHaveClass('w-12');
+    expect(image).toHaveClass('rounded-full');
+    expect(image).toHaveClass('object-cover');
   });
 });
