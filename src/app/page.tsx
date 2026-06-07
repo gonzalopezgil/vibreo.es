@@ -40,7 +40,7 @@ function timeAgo(isoStr: string): string {
 function HeroSkeleton() {
   return (
     <section className="relative">
-      <div className="relative flex min-h-[calc(100svh-3.5rem)] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-zinc-800/50 via-zinc-900 to-zinc-950 px-4 py-8 pb-28 md:pb-32">
+      <div className="relative flex min-h-[calc(75svh-2.625rem)] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-zinc-800/50 via-zinc-900 to-zinc-950 px-4 py-8 pb-20 md:pb-24">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-b from-transparent via-zinc-950/75 to-zinc-950 md:h-48" />
         <div className="w-[160px] h-[160px] md:w-[200px] md:h-[200px] rounded-xl bg-zinc-800 animate-pulse" />
         <div className="mt-5 w-48 h-6 bg-zinc-800 rounded animate-pulse" />
@@ -189,7 +189,7 @@ export default function Home() {
         <section className="relative">
           <VideoHero
             videoSrc={heroVideoSrc}
-            className="min-h-[calc(100svh-3.5rem)]"
+            className="min-h-[calc(75svh-2.625rem)]"
             overlayClassName="bg-gradient-to-b from-black/55 via-black/35 to-zinc-950/90"
             fallbackClassName="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950"
             fallbackMedia={hero.image_url ? (
@@ -203,7 +203,7 @@ export default function Home() {
               />
             ) : null}
           >
-            <div className="mx-auto flex min-h-[calc(100svh-3.5rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-8 pb-28 md:pb-32">
+            <div className="mx-auto flex min-h-[calc(75svh-2.625rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-8 pb-20 md:pb-24">
               {hero.image_url ? (
                 <button
                   type="button"
@@ -282,7 +282,7 @@ export default function Home() {
       })()}
 
       {/* ─── Section 2: What's Hot — Top 10 ────────────────────────── */}
-      <section className="relative z-20 -mt-32 mx-auto w-full max-w-3xl min-h-0 px-0 sm:-mt-28 sm:px-4">
+      <section className="relative z-20 -mt-24 mx-auto w-full max-w-3xl min-h-0 px-0 sm:-mt-[5.25rem] sm:px-4">
         <div className="px-4 sm:px-0">
           <SectionHeader title="What's Hot" subtitle="Top 10 Global" icon={Flame} />
         </div>
