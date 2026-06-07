@@ -282,7 +282,7 @@ export default function Home() {
       })()}
 
       {/* ─── Section 2: What's Hot — Top 10 ────────────────────────── */}
-      <section className="relative z-20 -mt-24 mx-auto w-full max-w-3xl min-h-0 px-0 sm:-mt-[5.25rem] sm:px-4">
+      <section className="relative z-20 -mt-16 mx-auto w-full max-w-3xl min-h-0 px-0 sm:-mt-[5.25rem] sm:px-4">
         <div className="px-4 sm:px-0">
           <SectionHeader title="What's Hot" subtitle="Top 10 Global" icon={Flame} />
         </div>

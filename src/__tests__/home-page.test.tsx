@@ -99,7 +99,7 @@ describe('Home page', () => {
     expect(content).toHaveClass('min-h-[calc(75svh-2.625rem)]');
     expect(content).toHaveClass('pb-20');
     expect(content).toHaveClass('md:pb-24');
-    expect(whatsHot).toHaveClass('-mt-24');
+    expect(whatsHot).toHaveClass('-mt-16');
     expect(whatsHot).toHaveClass('sm:-mt-[5.25rem]');
   });
 });
