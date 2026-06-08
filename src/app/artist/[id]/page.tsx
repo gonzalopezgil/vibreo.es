@@ -20,6 +20,7 @@ interface ArtistEntity {
   monthly_listeners?: number;
   monthly_listeners_daily_change?: number;
   monthly_listeners_rank?: number;
+  monthly_listeners_previous_rank?: number | null;
   monthly_listeners_peak_rank?: number;
   monthly_listeners_peak_listeners?: number;
 }
@@ -71,6 +72,7 @@ type ListenerChartingData = {
   artist_name: string;
   image_url: string;
   rank: number;
+  previous_rank: number | null;
   listeners: number;
   daily_change: number;
   peak_rank: number | null;
@@ -108,9 +110,16 @@ function formatSignedCompact(value: number) {
   return `${sign}${formatStreams(Math.abs(value))}`;
 }
 
-function ListenerDelta({ value }: { value: number }) {
-  if (value > 0) return <span className="text-green-400 text-xs font-medium">▲{formatStreams(value)}</span>;
-  if (value < 0) return <span className="text-red-400 text-xs font-medium">▼{formatStreams(Math.abs(value))}</span>;
+function ListenerRankChange({ currentRank, previousRank }: { currentRank?: number; previousRank?: number | null }) {
+  if (typeof currentRank !== 'number' || typeof previousRank !== 'number' || previousRank <= 0) {
+    return <span className="text-zinc-500 text-xs">-</span>;
+  }
+  if (currentRank < previousRank) {
+    return <span className="text-green-400 text-xs font-medium">▲{previousRank - currentRank}</span>;
+  }
+  if (currentRank > previousRank) {
+    return <span className="text-red-400 text-xs font-medium">▼{currentRank - previousRank}</span>;
+  }
   return <span className="text-zinc-500 text-xs">=</span>;
 }
 
@@ -145,11 +154,10 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
 
       <div className="flex items-center gap-3 px-4 py-3">
         <div className="flex w-8 shrink-0 flex-col items-center gap-0.5">
-          {typeof artist.monthly_listeners_daily_change === 'number' ? (
-            <ListenerDelta value={artist.monthly_listeners_daily_change} />
-          ) : (
-            <span className="text-zinc-500 text-xs">=</span>
-          )}
+          <ListenerRankChange
+            currentRank={artist.monthly_listeners_rank}
+            previousRank={artist.monthly_listeners_previous_rank}
+          />
           {typeof artist.monthly_listeners_rank === 'number' && (
             <span className="tabular-nums text-sm font-bold text-zinc-400">#{artist.monthly_listeners_rank}</span>
           )}
@@ -254,6 +262,7 @@ export default function ArtistPage() {
           monthly_listeners: listenerData?.listeners ?? artistData.monthly_listeners,
           monthly_listeners_daily_change: listenerData?.daily_change ?? artistData.monthly_listeners_daily_change,
           monthly_listeners_rank: listenerData?.rank ?? artistData.monthly_listeners_rank,
+          monthly_listeners_previous_rank: listenerData?.previous_rank ?? artistData.monthly_listeners_previous_rank ?? null,
           monthly_listeners_peak_rank: listenerData?.peak_rank ?? artistData.monthly_listeners_peak_rank,
           monthly_listeners_peak_listeners: listenerData?.peak_listeners ?? artistData.monthly_listeners_peak_listeners,
         });

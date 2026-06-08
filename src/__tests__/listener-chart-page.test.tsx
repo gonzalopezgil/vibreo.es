@@ -58,6 +58,7 @@ describe('ListenerChartPage', () => {
             artist_name: 'Alpha Artist',
             image_url: 'https://i.scdn.co/image/alpha.jpg',
             rank: 1,
+            previous_rank: 3,
             listeners: 100_000_000,
             daily_change: 10_000,
             peak_rank: 1,
@@ -69,6 +70,7 @@ describe('ListenerChartPage', () => {
             artist_name: 'Bravo Artist',
             image_url: 'https://i.scdn.co/image/bravo.jpg',
             rank: 2,
+            previous_rank: null,
             listeners: 90_000_000,
             daily_change: -5_000,
             peak_rank: 1,
@@ -88,6 +90,7 @@ describe('ListenerChartPage', () => {
             artist_name: 'Charlie Artist',
             image_url: '',
             rank: 101,
+            previous_rank: 99,
             listeners: 50_000_000,
             daily_change: 0,
             peak_rank: null,
@@ -105,10 +108,15 @@ describe('ListenerChartPage', () => {
     expect(await screen.findByRole('heading', { name: 'Monthly Listener Chart' })).toBeInTheDocument();
     const table = await screen.findByTestId('listener-chart-table');
     expect(within(table).getByText('Alpha Artist')).toBeInTheDocument();
+    const alphaRow = screen.getByRole('link', { name: /Alpha Artist/i });
+    expect(within(alphaRow).getByText('▲2')).toBeInTheDocument();
+    expect(within(alphaRow).queryByText('▲10.0K')).not.toBeInTheDocument();
     expect(screen.getByText('100.0M listeners')).toBeInTheDocument();
     expect(screen.getByText('+10.0K daily')).toBeInTheDocument();
     expect(screen.getByText('Peak #1 · 105.0M')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Alpha Artist/i })).toHaveAttribute('href', '/artist/alpha');
+    const bravoRow = screen.getByRole('link', { name: /Bravo Artist/i });
+    expect(within(bravoRow).getByText('-')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Load more/i }));
 
@@ -129,6 +137,7 @@ describe('ListenerChartPage', () => {
           artist_name: 'Alpha Artist',
           image_url: 'https://i.scdn.co/image/alpha.jpg',
           rank: 1,
+          previous_rank: null,
           listeners: 100_000_000,
           daily_change: 10_000,
           peak_rank: 1,
@@ -173,6 +182,7 @@ describe('ListenerChartPage', () => {
           artist_name: 'Alpha Artist',
           image_url: 'https://i.scdn.co/image/alpha.jpg',
           rank: 1,
+          previous_rank: null,
           listeners: 100_000_000,
           daily_change: 10_000,
           peak_rank: 1,
@@ -184,6 +194,7 @@ describe('ListenerChartPage', () => {
           artist_name: 'Bravo Artist',
           image_url: 'https://i.scdn.co/image/bravo.jpg',
           rank: 2,
+          previous_rank: 1,
           listeners: 90_000_000,
           daily_change: -5_000,
           peak_rank: 1,

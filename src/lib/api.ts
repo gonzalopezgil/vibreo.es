@@ -12,6 +12,7 @@ export interface ListenerChartEntry {
   artist_name: string;
   image_url: string;
   rank: number;
+  previous_rank: number | null;
   listeners: number;
   daily_change: number;
   peak_rank: number | null;

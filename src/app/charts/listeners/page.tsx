@@ -31,9 +31,16 @@ function normalize(value: string) {
     .trim();
 }
 
-function ListenerDelta({ value }: { value: number }) {
-  if (value > 0) return <span className="text-green-400 text-xs font-medium">▲{formatStreams(value)}</span>;
-  if (value < 0) return <span className="text-red-400 text-xs font-medium">▼{formatStreams(Math.abs(value))}</span>;
+function RankChangeIndicator({ entry }: { entry: ListenerChartEntry }) {
+  if (typeof entry.previous_rank !== 'number' || entry.previous_rank <= 0) {
+    return <span className="text-zinc-500 text-xs">-</span>;
+  }
+  if (entry.rank < entry.previous_rank) {
+    return <span className="text-green-400 text-xs font-medium">▲{entry.previous_rank - entry.rank}</span>;
+  }
+  if (entry.rank > entry.previous_rank) {
+    return <span className="text-red-400 text-xs font-medium">▼{entry.rank - entry.previous_rank}</span>;
+  }
   return <span className="text-zinc-500 text-xs">=</span>;
 }
 
@@ -52,7 +59,7 @@ function ListenerChartRow({
       }`}
     >
       <div className="flex w-8 shrink-0 flex-col items-center gap-0.5">
-        <ListenerDelta value={entry.daily_change} />
+        <RankChangeIndicator entry={entry} />
         <span className="tabular-nums text-sm font-bold text-zinc-400">{entry.rank}</span>
       </div>
 

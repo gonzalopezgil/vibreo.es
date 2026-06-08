@@ -96,6 +96,7 @@ describe('ArtistPage', () => {
       listeners: 87_388_651,
       daily_change: 271_982,
       rank: 14,
+      previous_rank: 16,
       peak_rank: 1,
       peak_listeners: 126_970_279,
     });
@@ -206,6 +207,8 @@ describe('ArtistPage', () => {
     expect(panel).toHaveClass('border-zinc-800/60');
     expect(within(panel).getByText('87.4M')).toBeInTheDocument();
     expect(within(panel).getByText('monthly listeners')).toBeInTheDocument();
+    expect(within(panel).getByText('▲2')).toBeInTheDocument();
+    expect(within(panel).queryByText('▲272.0K')).not.toBeInTheDocument();
     expect(screen.getByText('+272.0K daily')).toBeInTheDocument();
     expect(within(panel).getByText('#14')).toBeInTheDocument();
     expect(screen.getByText('Peak #1 · 127.0M')).toBeInTheDocument();
@@ -228,6 +231,7 @@ describe('ArtistPage', () => {
       listeners: 88_000_000,
       daily_change: -50_000,
       rank: 13,
+      previous_rank: 12,
       peak_rank: 1,
       peak_listeners: 126_970_279,
     });
@@ -235,6 +239,7 @@ describe('ArtistPage', () => {
     render(<ArtistPage />);
 
     expect(await screen.findByText('88.0M')).toBeInTheDocument();
+    expect(screen.getByText('▼1')).toBeInTheDocument();
     expect(screen.getByText('monthly listeners')).toBeInTheDocument();
     expect(screen.getByText('-50.0K daily')).toBeInTheDocument();
     expect(screen.getByText('#13')).toBeInTheDocument();
