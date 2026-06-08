@@ -192,7 +192,26 @@ describe('ArtistPage', () => {
   it('renders monthly listener metrics in a dedicated panel before chart tabs', async () => {
     mockedGetChartingArtists.mockResolvedValue({
       'spotify:artist:ariana': {
-        songs: [],
+        songs: [
+          {
+            track_uri: 'spotify:track:one',
+            track_name: 'song one',
+            image_url: 'https://i.scdn.co/image/one.jpg',
+            positions: [{ country: 'global', rank: 1, streams: 3_000_000 }],
+          },
+          {
+            track_uri: 'spotify:track:two',
+            track_name: 'song two',
+            image_url: 'https://i.scdn.co/image/two.jpg',
+            positions: [{ country: 'us', rank: 2, streams: 2_000_000 }],
+          },
+          {
+            track_uri: 'spotify:track:three',
+            track_name: 'song three',
+            image_url: 'https://i.scdn.co/image/three.jpg',
+            positions: [{ country: 'gb', rank: 3, streams: 2_700_000 }],
+          },
+        ],
         positions: [],
       },
     });
@@ -205,8 +224,16 @@ describe('ArtistPage', () => {
     expect(panel).toHaveClass('overflow-hidden');
     expect(panel).toHaveClass('rounded-2xl');
     expect(panel).toHaveClass('border-zinc-800/60');
+    expect(within(panel).queryByText('Ariana Grande')).not.toBeInTheDocument();
+    expect(within(panel).queryByAltText('Ariana Grande')).not.toBeInTheDocument();
+    expect(within(panel).getByText('Songs charting')).toHaveClass('bg-green-500/15');
+    expect(within(panel).getByText('Markets')).toHaveClass('bg-blue-500/15');
+    expect(within(panel).getByText('Daily filtered streams')).toHaveClass('bg-zinc-700/50');
     expect(within(panel).getByText('87.4M')).toBeInTheDocument();
     expect(within(panel).getByText('monthly listeners')).toBeInTheDocument();
+    expect(within(panel).getByText('3 songs charting')).toBeInTheDocument();
+    expect(within(panel).getByText('3 markets')).toBeInTheDocument();
+    expect(within(panel).getByText('7.7M')).toBeInTheDocument();
     expect(within(panel).getByText('▲2')).toBeInTheDocument();
     expect(within(panel).queryByText('▲272.0K')).not.toBeInTheDocument();
     expect(within(panel).getByText('Up 2 today')).toBeInTheDocument();

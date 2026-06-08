@@ -127,7 +127,17 @@ function getListenerRankMovementLabel(currentRank?: number, previousRank?: numbe
   return 'Same position today';
 }
 
-function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
+function MonthlyListenersPanel({
+  artist,
+  chartingSongCount,
+  marketCount,
+  dailyFilteredStreams,
+}: {
+  artist: ArtistEntity;
+  chartingSongCount: number;
+  marketCount: number;
+  dailyFilteredStreams: number;
+}) {
   if (typeof artist.monthly_listeners !== 'number') return null;
 
   const peakLabel = typeof artist.monthly_listeners_peak_listeners === 'number'
@@ -137,6 +147,12 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
     artist.monthly_listeners_rank,
     artist.monthly_listeners_previous_rank,
   );
+  const chartingSongsLabel = chartingSongCount > 0
+    ? `${chartingSongCount} ${chartingSongCount === 1 ? 'song' : 'songs'} charting`
+    : 'No songs charting';
+  const marketsLabel = marketCount > 0
+    ? `${marketCount} ${marketCount === 1 ? 'market' : 'markets'}`
+    : 'No active markets';
 
   return (
     <section
@@ -159,48 +175,67 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
         </Link>
       </div>
 
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="flex w-8 shrink-0 flex-col items-center gap-0.5">
-          <ListenerRankChange
-            currentRank={artist.monthly_listeners_rank}
-            previousRank={artist.monthly_listeners_previous_rank}
-          />
-          {typeof artist.monthly_listeners_rank === 'number' && (
-            <span className="tabular-nums text-sm font-bold text-zinc-400">#{artist.monthly_listeners_rank}</span>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-4 px-4 py-4">
+        <div className="min-w-0">
+          <dt>
+            <span className="inline-flex rounded-full bg-green-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-green-400">
+              monthly listeners
+            </span>
+          </dt>
+          <dd className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-2xl font-black tabular-nums text-zinc-100">{formatStreams(artist.monthly_listeners)}</span>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400">
+              <ListenerRankChange
+                currentRank={artist.monthly_listeners_rank}
+                previousRank={artist.monthly_listeners_previous_rank}
+              />
+              {typeof artist.monthly_listeners_rank === 'number' && (
+                <span className="tabular-nums">#{artist.monthly_listeners_rank}</span>
+              )}
+            </span>
+          </dd>
+          {(rankMovementLabel || peakLabel) && (
+            <p className="mt-1 truncate text-xs text-zinc-500">
+              {rankMovementLabel && <span>{rankMovementLabel}</span>}
+              {peakLabel && (
+                <span className={rankMovementLabel ? 'ml-1.5' : ''}>
+                  {peakLabel}
+                </span>
+              )}
+            </p>
           )}
         </div>
 
-        {artist.image_url ? (
-          <Image
-            src={artist.image_url}
-            alt={artist.artist_name}
-            width={40}
-            height={40}
-            className="h-10 w-10 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800">
-            <User size={16} className="text-zinc-600" />
-          </div>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-zinc-100">{artist.artist_name}</p>
-          <p className="truncate text-xs text-zinc-500">
-            {rankMovementLabel && <span>{rankMovementLabel}</span>}
-            {peakLabel && (
-              <span className={rankMovementLabel ? 'ml-1.5' : ''}>
-                {peakLabel}
-              </span>
-            )}
-          </p>
+        <div className="min-w-0">
+          <dt>
+            <span className="inline-flex rounded-full bg-green-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-green-400">
+              Songs charting
+            </span>
+          </dt>
+          <dd className="mt-2 truncate text-base font-bold tabular-nums text-zinc-100">{chartingSongsLabel}</dd>
+          <p className="mt-1 text-xs text-zinc-500">Spotify chart activity</p>
         </div>
 
-        <div className="shrink-0 text-right">
-          <p className="text-lg font-black tabular-nums text-zinc-100">{formatStreams(artist.monthly_listeners)}</p>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">monthly listeners</p>
+        <div className="min-w-0">
+          <dt>
+            <span className="inline-flex rounded-full bg-blue-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+              Markets
+            </span>
+          </dt>
+          <dd className="mt-2 truncate text-base font-bold tabular-nums text-zinc-100">{marketsLabel}</dd>
+          <p className="mt-1 text-xs text-zinc-500">Countries with charting songs</p>
         </div>
-      </div>
+
+        <div className="min-w-0">
+          <dt>
+            <span className="inline-flex rounded-full bg-zinc-700/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">
+              Daily filtered streams
+            </span>
+          </dt>
+          <dd className="mt-2 truncate text-base font-bold tabular-nums text-zinc-100">{formatStreams(dailyFilteredStreams)}</dd>
+          <p className="mt-1 text-xs text-zinc-500">Across current chart entries</p>
+        </div>
+      </dl>
     </section>
   );
 }
@@ -471,7 +506,12 @@ export default function ArtistPage() {
       </VideoHero>
 
       <div className="mx-auto max-w-2xl px-4 space-y-8">
-        <MonthlyListenersPanel artist={artist} />
+        <MonthlyListenersPanel
+          artist={artist}
+          chartingSongCount={songs.length}
+          marketCount={totalCountries}
+          dailyFilteredStreams={totalStreams}
+        />
 
         {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-zinc-800/50 p-1">
