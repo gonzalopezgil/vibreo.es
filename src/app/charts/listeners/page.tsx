@@ -42,6 +42,18 @@ function extractId(uri: string) {
   return uri.split(':').pop() || uri;
 }
 
+function getListenerHeroVideoTrackId(
+  listenerEntries: ListenerChartEntry[],
+  chartingArtistsData: Record<string, ChartingArtistData>,
+  ytData: YouTubeLinks,
+) {
+  for (const entry of listenerEntries) {
+    const sourceSong = chartingArtistsData[entry.artist_uri]?.songs?.find((song) => ytData[song.track_uri]?.v);
+    if (sourceSong) return extractId(sourceSong.track_uri);
+  }
+  return null;
+}
+
 function RankChangeIndicator({ entry }: { entry: ListenerChartEntry }) {
   if (typeof entry.previous_rank !== 'number' || entry.previous_rank <= 0) {
     return <span className="text-zinc-500 text-xs">-</span>;
@@ -155,8 +167,7 @@ export default function ListenerChartPage() {
   const [searchResults, setSearchResults] = useState<ListenerChartEntry[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [artistHeroSongs, setArtistHeroSongs] = useState<ChartingArtistSong[]>([]);
-  const [ytLinksMap, setYtLinksMap] = useState<YouTubeLinks>({});
+  const [heroVideoTrackId, setHeroVideoTrackId] = useState<string | null>(null);
   const latestSearchRef = useRef(0);
 
   async function loadPage(offset: number) {
@@ -170,14 +181,12 @@ export default function ListenerChartPage() {
       setNextOffset(page.nextOffset);
 
       if (offset === 0) {
-        const topArtistUri = page.items[0]?.artist_uri;
         const [chartingArtistsData, ytData] = await Promise.all([
           getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
           getYouTubeLinks().catch(() => ({} as YouTubeLinks)),
         ]);
 
-        setArtistHeroSongs(topArtistUri ? chartingArtistsData[topArtistUri]?.songs || [] : []);
-        setYtLinksMap(ytData);
+        setHeroVideoTrackId(getListenerHeroVideoTrackId(page.items, chartingArtistsData, ytData));
       }
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Failed to load listener chart'));
@@ -244,8 +253,7 @@ export default function ListenerChartPage() {
   const hasQuery = filterQuery.trim().length > 0;
   const topEntry = entries[0] || null;
   const displayEntries = hasQuery ? (searchResults ?? []) : entries;
-  const heroSourceSong = artistHeroSongs.find((song) => ytLinksMap[song.track_uri]?.v) || null;
-  const heroVideoSrc = heroSourceSong ? getHeroVideoUrl(extractId(heroSourceSong.track_uri)) : null;
+  const heroVideoSrc = heroVideoTrackId ? getHeroVideoUrl(heroVideoTrackId) : null;
 
   return (
     <main className="min-h-screen pb-24">

@@ -221,7 +221,7 @@ describe('ListenerChartPage', () => {
     expect(within(table).getByText('Listeners')).toBeInTheDocument();
   });
 
-  it('uses a video from the #1 listener artist when the artist has a linked song video', async () => {
+  it('uses the first linked song video from the loaded listener artists', async () => {
     mockedGetChartingListenersPage.mockResolvedValueOnce({
       items: [
         {
@@ -236,11 +236,23 @@ describe('ListenerChartPage', () => {
           peak_rank: 1,
           peak_listeners: 105_000_000,
         },
+        {
+          artist_uri: 'spotify:artist:bravo',
+          artist_id: 'bravo',
+          artist_name: 'Bravo Artist',
+          image_url: 'https://i.scdn.co/image/bravo.jpg',
+          rank: 2,
+          previous_rank: null,
+          listeners: 90_000_000,
+          daily_change: -5_000,
+          peak_rank: 1,
+          peak_listeners: 92_000_000,
+        },
       ],
       limit: 100,
       nextOffset: null,
       offset: 0,
-      total: 1,
+      total: 2,
     });
     mockedGetChartingArtists.mockResolvedValue({
       'spotify:artist:alpha': {
@@ -251,6 +263,10 @@ describe('ListenerChartPage', () => {
             image_url: 'https://i.scdn.co/image/no-video.jpg',
             positions: [],
           },
+        ],
+      },
+      'spotify:artist:bravo': {
+        songs: [
           {
             track_uri: 'spotify:track:hero-song',
             track_name: 'hero song',
