@@ -1,11 +1,13 @@
 import type React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import ArtistPage from '@/app/artist/[id]/page';
 import {
   getArtist,
   getArtistChannels,
+  getArtistListener,
   getChartingAlbums,
   getChartingArtists,
+  getChartingListeners,
   getErrorMessage,
   getHeroVideoUrl,
   getYouTubeLinks,
@@ -47,8 +49,10 @@ jest.mock('next/image', () => ({
 jest.mock('@/lib/api', () => ({
   getArtist: jest.fn(),
   getArtistChannels: jest.fn(),
+  getArtistListener: jest.fn(),
   getChartingAlbums: jest.fn(),
   getChartingArtists: jest.fn(),
+  getChartingListeners: jest.fn(),
   getErrorMessage: jest.fn((error: unknown, fallback: string) => (
     error instanceof Error ? error.message : fallback
   )),
@@ -57,7 +61,9 @@ jest.mock('@/lib/api', () => ({
 }));
 
 const mockedGetArtist = jest.mocked(getArtist);
+const mockedGetArtistListener = jest.mocked(getArtistListener);
 const mockedGetChartingArtists = jest.mocked(getChartingArtists);
+const mockedGetChartingListeners = jest.mocked(getChartingListeners);
 const mockedGetChartingAlbums = jest.mocked(getChartingAlbums);
 const mockedGetArtistChannels = jest.mocked(getArtistChannels);
 const mockedGetYouTubeLinks = jest.mocked(getYouTubeLinks);
@@ -82,7 +88,19 @@ describe('ArtistPage', () => {
       artist_name: 'Ariana Grande',
       image_url: 'https://i.scdn.co/image/ariana.jpg',
     });
+    mockedGetArtistListener.mockResolvedValue({
+      artist_uri: 'spotify:artist:ariana',
+      artist_id: 'ariana',
+      artist_name: 'Ariana Grande',
+      image_url: 'https://i.scdn.co/image/ariana.jpg',
+      listeners: 87_388_651,
+      daily_change: 271_982,
+      rank: 14,
+      peak_rank: 1,
+      peak_listeners: 126_970_279,
+    });
     mockedGetChartingAlbums.mockResolvedValue({});
+    mockedGetChartingListeners.mockResolvedValue({});
     mockedGetArtistChannels.mockResolvedValue({});
     mockedGetYouTubeLinks.mockResolvedValue({});
     mockedGetHeroVideoUrl.mockReturnValue('/hero.mp4');
@@ -168,5 +186,59 @@ describe('ArtistPage', () => {
 
     expect(await screen.findByText('local song')).toBeInTheDocument();
     expect(screen.getByText('2.9M · 3 markets · #20 Brazil')).toBeInTheDocument();
+  });
+
+  it('renders monthly listener metrics in a dedicated panel before chart tabs', async () => {
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [],
+        positions: [],
+      },
+    });
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Spotify monthly listeners' })).toBeInTheDocument();
+    const panel = screen.getByTestId('monthly-listeners-panel');
+
+    expect(panel).toHaveClass('overflow-hidden');
+    expect(panel).toHaveClass('rounded-2xl');
+    expect(panel).toHaveClass('border-zinc-800/60');
+    expect(within(panel).getByText('87.4M')).toBeInTheDocument();
+    expect(within(panel).getByText('monthly listeners')).toBeInTheDocument();
+    expect(screen.getByText('+272.0K daily')).toBeInTheDocument();
+    expect(within(panel).getByText('#14')).toBeInTheDocument();
+    expect(screen.getByText('Peak #1 · 127.0M')).toBeInTheDocument();
+    expect(within(panel).getByRole('link', { name: /Full chart/i })).toHaveAttribute('href', '/charts/listeners');
+    expect(screen.queryByText('Chart rank')).not.toBeInTheDocument();
+  });
+
+  it('requests only this artist listener record instead of the full listener map', async () => {
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [],
+        positions: [],
+      },
+    });
+    mockedGetArtistListener.mockResolvedValue({
+      artist_uri: 'spotify:artist:ariana',
+      artist_id: 'ariana',
+      artist_name: 'Ariana Grande',
+      image_url: 'https://i.scdn.co/image/ariana.jpg',
+      listeners: 88_000_000,
+      daily_change: -50_000,
+      rank: 13,
+      peak_rank: 1,
+      peak_listeners: 126_970_279,
+    });
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByText('88.0M')).toBeInTheDocument();
+    expect(screen.getByText('monthly listeners')).toBeInTheDocument();
+    expect(screen.getByText('-50.0K daily')).toBeInTheDocument();
+    expect(screen.getByText('#13')).toBeInTheDocument();
+    expect(mockedGetArtistListener).toHaveBeenCalledWith('ariana');
+    expect(mockedGetChartingListeners).not.toHaveBeenCalled();
   });
 });

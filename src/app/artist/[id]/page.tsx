@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Music, User, Disc } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Music, User, Disc } from 'lucide-react';
 import { SpotifyIcon, YouTubeMusicIcon } from '@/components/PlatformIcons';
 import { ImageModal } from '@/components/ImageModal';
 import { VideoHero } from '@/components/VideoHero';
-import { getArtist, getChartingArtists, getChartingAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
+import { getArtist, getArtistListener, getChartingArtists, getChartingAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
 import { FlagIcon } from '@/components/FlagIcon';
 import { getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
@@ -17,6 +17,11 @@ interface ArtistEntity {
   artist_uri: string;
   artist_name: string;
   image_url: string;
+  monthly_listeners?: number;
+  monthly_listeners_daily_change?: number;
+  monthly_listeners_rank?: number;
+  monthly_listeners_peak_rank?: number;
+  monthly_listeners_peak_listeners?: number;
 }
 
 interface ChartingSong {
@@ -60,6 +65,18 @@ type ChartingAlbumData = {
   positions?: ChartingAlbumEntry['positions'];
 };
 
+type ListenerChartingData = {
+  artist_uri: string;
+  artist_id: string;
+  artist_name: string;
+  image_url: string;
+  rank: number;
+  listeners: number;
+  daily_change: number;
+  peak_rank: number | null;
+  peak_listeners: number;
+};
+
 type Tab = 'songs' | 'artist-chart' | 'albums';
 
 function extractId(uri: string) {
@@ -86,6 +103,95 @@ function getFeaturedSongPosition(song: ChartingSong) {
   return topCountryPosition ?? song.positions[0];
 }
 
+function formatSignedCompact(value: number) {
+  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+  return `${sign}${formatStreams(Math.abs(value))}`;
+}
+
+function ListenerDelta({ value }: { value: number }) {
+  if (value > 0) return <span className="text-green-400 text-xs font-medium">▲{formatStreams(value)}</span>;
+  if (value < 0) return <span className="text-red-400 text-xs font-medium">▼{formatStreams(Math.abs(value))}</span>;
+  return <span className="text-zinc-500 text-xs">=</span>;
+}
+
+function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
+  if (typeof artist.monthly_listeners !== 'number') return null;
+
+  const peakLabel = typeof artist.monthly_listeners_peak_listeners === 'number'
+    ? `${typeof artist.monthly_listeners_peak_rank === 'number' ? `Peak #${artist.monthly_listeners_peak_rank} · ` : 'Peak '}${formatStreams(artist.monthly_listeners_peak_listeners)}`
+    : null;
+
+  return (
+    <section
+      data-testid="monthly-listeners-panel"
+      className="overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/50"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-zinc-800/60 px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-100">
+            <SpotifyIcon size={14} />
+            Spotify monthly listeners
+          </h2>
+          <p className="mt-0.5 truncate text-xs text-zinc-500">Global listener chart position</p>
+        </div>
+        <Link
+          href="/charts/listeners"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-zinc-800/70 px-2.5 py-1 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-700/80 hover:text-zinc-100"
+        >
+          <span>Full chart</span>
+          <ChevronRight size={14} className="shrink-0" />
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex w-8 shrink-0 flex-col items-center gap-0.5">
+          {typeof artist.monthly_listeners_daily_change === 'number' ? (
+            <ListenerDelta value={artist.monthly_listeners_daily_change} />
+          ) : (
+            <span className="text-zinc-500 text-xs">=</span>
+          )}
+          {typeof artist.monthly_listeners_rank === 'number' && (
+            <span className="tabular-nums text-sm font-bold text-zinc-400">#{artist.monthly_listeners_rank}</span>
+          )}
+        </div>
+
+        {artist.image_url ? (
+          <Image
+            src={artist.image_url}
+            alt={artist.artist_name}
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800">
+            <User size={16} className="text-zinc-600" />
+          </div>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-zinc-100">{artist.artist_name}</p>
+          <p className="truncate text-xs text-zinc-500">
+            {typeof artist.monthly_listeners_daily_change === 'number' && (
+              <span>{formatSignedCompact(artist.monthly_listeners_daily_change)} daily</span>
+            )}
+            {peakLabel && (
+              <span className={typeof artist.monthly_listeners_daily_change === 'number' ? 'ml-1.5' : ''}>
+                {peakLabel}
+              </span>
+            )}
+          </p>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <p className="text-lg font-black tabular-nums text-zinc-100">{formatStreams(artist.monthly_listeners)}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">monthly listeners</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ArtistAvatar({ src, name, size }: { src: string; name: string; size: number }) {
   if (!src) {
     return (
@@ -105,7 +211,7 @@ function ArtistAvatar({ src, name, size }: { src: string; name: string; size: nu
       height={size}
       className="rounded-full shadow-lg object-cover"
       style={{ width: size, height: size }}
-      priority
+      loading="eager"
     />
   );
 }
@@ -132,17 +238,25 @@ export default function ArtistPage() {
 
     async function load() {
       try {
-        const [artistData, chartingData, albumChartingData, channelsData, ytData] = await Promise.all([
+        const [artistData, chartingData, albumChartingData, listenerData, channelsData, ytData] = await Promise.all([
           getArtist<ArtistEntity>(id),
           getChartingArtists<Record<string, ChartingArtistData>>(),
           getChartingAlbums<Record<string, ChartingAlbumData | ChartingAlbumEntry['positions']>>(),
+          getArtistListener(id).catch(() => null as ListenerChartingData | null),
           getArtistChannels().catch(() => ({} as Record<string, string>)),
           getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
         ]);
         if (cancelled) return;
-        setArtist(artistData);
 
         const uri = `spotify:artist:${id}`;
+        setArtist({
+          ...artistData,
+          monthly_listeners: listenerData?.listeners ?? artistData.monthly_listeners,
+          monthly_listeners_daily_change: listenerData?.daily_change ?? artistData.monthly_listeners_daily_change,
+          monthly_listeners_rank: listenerData?.rank ?? artistData.monthly_listeners_rank,
+          monthly_listeners_peak_rank: listenerData?.peak_rank ?? artistData.monthly_listeners_peak_rank,
+          monthly_listeners_peak_listeners: listenerData?.peak_listeners ?? artistData.monthly_listeners_peak_listeners,
+        });
 
         // Songs
         const data = chartingData[uri];
@@ -263,6 +377,7 @@ export default function ArtistPage() {
             sizes="100vw"
             className="blur-3xl scale-110 opacity-40 object-cover absolute inset-0 z-0"
             aria-hidden="true"
+            loading="eager"
           />
         ) : null}
       >
@@ -342,6 +457,8 @@ export default function ArtistPage() {
       </VideoHero>
 
       <div className="mx-auto max-w-2xl px-4 space-y-8">
+        <MonthlyListenersPanel artist={artist} />
+
         {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-zinc-800/50 p-1">
           {TABS.map((tab) => (

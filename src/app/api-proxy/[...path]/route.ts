@@ -6,7 +6,8 @@ const PUBLIC_ORIGIN = 'https://vibreo.es';
 const ALLOWED_API_PATHS = [
   /^\/latest$/,
   /^\/search$/,
-  /^\/charting\/(?:songs|artists|albums|market-streams|youtube-links|artist-channels)$/,
+  /^\/charting\/(?:songs|artists|albums|listeners|market-streams|youtube-links|artist-channels)$/,
+  /^\/charting\/listeners\/[a-z0-9]+$/i,
   /^\/charts\/(?:songs\/daily|artists\/daily|albums\/weekly)\/[a-z0-9-]+\/(?:latest|\d{4}-\d{2}-\d{2})$/i,
   /^\/(?:songs|artists|albums)\/[a-z0-9]+$/i,
 ];

@@ -6,6 +6,26 @@ const DIRECT_API = "https://api.vibreo.es";
 
 export type YouTubeLinks = Record<string, { m?: string; v?: string; vt?: string }>;
 
+export interface ListenerChartEntry {
+  artist_uri: string;
+  artist_id: string;
+  artist_name: string;
+  image_url: string;
+  rank: number;
+  listeners: number;
+  daily_change: number;
+  peak_rank: number | null;
+  peak_listeners: number;
+}
+
+export interface ListenerChartPage {
+  items: ListenerChartEntry[];
+  limit: number;
+  nextOffset: number | null;
+  offset: number;
+  total: number;
+}
+
 export function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
@@ -68,6 +88,18 @@ export async function getChartingArtists<T>() {
 
 export async function getChartingAlbums<T>() {
   return apiFetch<T>("/charting/albums");
+}
+
+export async function getChartingListeners<T>() {
+  return apiFetch<T>("/charting/listeners");
+}
+
+export async function getArtistListener(id: string) {
+  return apiFetch<ListenerChartEntry>(`/charting/listeners/${id}`);
+}
+
+export async function getChartingListenersPage({ limit, offset }: { limit: number; offset: number }) {
+  return apiFetch<ListenerChartPage>(`/charting/listeners?limit=${limit}&offset=${offset}`);
 }
 
 export async function getMarketStreams() {
