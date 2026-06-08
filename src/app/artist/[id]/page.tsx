@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -127,32 +127,39 @@ function getListenerRankMovementLabel(currentRank?: number, previousRank?: numbe
   return 'Same position today';
 }
 
-function MonthlyListenersPanel({
-  artist,
-  chartingSongCount,
-  marketCount,
-  dailyFilteredStreams,
+function formatRank(rank?: number | null) {
+  return typeof rank === 'number' ? `#${rank}` : '—';
+}
+
+function formatOptionalStreams(streams?: number | null) {
+  return typeof streams === 'number' ? formatStreams(streams) : '—';
+}
+
+function MonthlyListenerDetailRow({
+  label,
+  children,
 }: {
-  artist: ArtistEntity;
-  chartingSongCount: number;
-  marketCount: number;
-  dailyFilteredStreams: number;
+  label: string;
+  children: ReactNode;
 }) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-4 py-3">
+      <span className="shrink-0 text-xs text-zinc-500">{label}</span>
+      <span className="min-w-0 text-right text-xs font-medium text-zinc-200">{children}</span>
+    </div>
+  );
+}
+
+function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
   if (typeof artist.monthly_listeners !== 'number') return null;
 
-  const peakLabel = typeof artist.monthly_listeners_peak_listeners === 'number'
-    ? `${typeof artist.monthly_listeners_peak_rank === 'number' ? `Peak #${artist.monthly_listeners_peak_rank} · ` : 'Peak '}${formatStreams(artist.monthly_listeners_peak_listeners)}`
-    : null;
   const rankMovementLabel = getListenerRankMovementLabel(
     artist.monthly_listeners_rank,
     artist.monthly_listeners_previous_rank,
   );
-  const chartingSongsLabel = chartingSongCount > 0
-    ? `${chartingSongCount} ${chartingSongCount === 1 ? 'song' : 'songs'} charting`
-    : 'No songs charting';
-  const marketsLabel = marketCount > 0
-    ? `${marketCount} ${marketCount === 1 ? 'market' : 'markets'}`
-    : 'No active markets';
+  const hasRankMovement = typeof artist.monthly_listeners_rank === 'number'
+    && typeof artist.monthly_listeners_previous_rank === 'number'
+    && artist.monthly_listeners_previous_rank > 0;
 
   return (
     <section
@@ -175,67 +182,36 @@ function MonthlyListenersPanel({
         </Link>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-4 px-4 py-4">
-        <div className="min-w-0">
-          <dt>
-            <span className="inline-flex rounded-full bg-green-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-green-400">
-              monthly listeners
-            </span>
-          </dt>
-          <dd className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-2xl font-black tabular-nums text-zinc-100">{formatStreams(artist.monthly_listeners)}</span>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-400">
-              <ListenerRankChange
-                currentRank={artist.monthly_listeners_rank}
-                previousRank={artist.monthly_listeners_previous_rank}
-              />
-              {typeof artist.monthly_listeners_rank === 'number' && (
-                <span className="tabular-nums">#{artist.monthly_listeners_rank}</span>
+      <div className="divide-y divide-zinc-800/40">
+        <MonthlyListenerDetailRow label="Current listeners">
+          <span className="tabular-nums">{formatStreams(artist.monthly_listeners)}</span>
+        </MonthlyListenerDetailRow>
+
+        <MonthlyListenerDetailRow label="Current position">
+          <span className="flex flex-col items-end gap-0.5">
+            <span className="inline-flex items-center gap-1.5">
+              {hasRankMovement && (
+                <ListenerRankChange
+                  currentRank={artist.monthly_listeners_rank}
+                  previousRank={artist.monthly_listeners_previous_rank}
+                />
               )}
+              <span className="tabular-nums">{formatRank(artist.monthly_listeners_rank)}</span>
             </span>
-          </dd>
-          {(rankMovementLabel || peakLabel) && (
-            <p className="mt-1 truncate text-xs text-zinc-500">
-              {rankMovementLabel && <span>{rankMovementLabel}</span>}
-              {peakLabel && (
-                <span className={rankMovementLabel ? 'ml-1.5' : ''}>
-                  {peakLabel}
-                </span>
-              )}
-            </p>
-          )}
-        </div>
+            {rankMovementLabel && (
+              <span className="text-[11px] font-normal text-zinc-500">{rankMovementLabel}</span>
+            )}
+          </span>
+        </MonthlyListenerDetailRow>
 
-        <div className="min-w-0">
-          <dt>
-            <span className="inline-flex rounded-full bg-green-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-green-400">
-              Songs charting
-            </span>
-          </dt>
-          <dd className="mt-2 truncate text-base font-bold tabular-nums text-zinc-100">{chartingSongsLabel}</dd>
-          <p className="mt-1 text-xs text-zinc-500">Spotify chart activity</p>
-        </div>
+        <MonthlyListenerDetailRow label="Peak listeners">
+          <span className="tabular-nums">{formatOptionalStreams(artist.monthly_listeners_peak_listeners)}</span>
+        </MonthlyListenerDetailRow>
 
-        <div className="min-w-0">
-          <dt>
-            <span className="inline-flex rounded-full bg-blue-500/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
-              Markets
-            </span>
-          </dt>
-          <dd className="mt-2 truncate text-base font-bold tabular-nums text-zinc-100">{marketsLabel}</dd>
-          <p className="mt-1 text-xs text-zinc-500">Countries with charting songs</p>
-        </div>
-
-        <div className="min-w-0">
-          <dt>
-            <span className="inline-flex rounded-full bg-zinc-700/50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">
-              Daily filtered streams
-            </span>
-          </dt>
-          <dd className="mt-2 truncate text-base font-bold tabular-nums text-zinc-100">{formatStreams(dailyFilteredStreams)}</dd>
-          <p className="mt-1 text-xs text-zinc-500">Across current chart entries</p>
-        </div>
-      </dl>
+        <MonthlyListenerDetailRow label="Peak position">
+          <span className="tabular-nums">{formatRank(artist.monthly_listeners_peak_rank)}</span>
+        </MonthlyListenerDetailRow>
+      </div>
     </section>
   );
 }
@@ -458,6 +434,11 @@ export default function ArtistPage() {
 
             {/* Quick stats */}
             <div className="flex flex-wrap items-center justify-center gap-2">
+              {typeof artist.monthly_listeners === 'number' && (
+                <span className="text-xs font-medium bg-amber-500/15 text-amber-300 px-2.5 py-1 rounded-full">
+                  {formatStreams(artist.monthly_listeners)} monthly listeners
+                </span>
+              )}
               {songs.length > 0 && (
                 <>
                   <span className="text-xs font-medium bg-green-500/15 text-green-400 px-2.5 py-1 rounded-full">
@@ -506,12 +487,7 @@ export default function ArtistPage() {
       </VideoHero>
 
       <div className="mx-auto max-w-2xl px-4 space-y-8">
-        <MonthlyListenersPanel
-          artist={artist}
-          chartingSongCount={songs.length}
-          marketCount={totalCountries}
-          dailyFilteredStreams={totalStreams}
-        />
+        <MonthlyListenersPanel artist={artist} />
 
         {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-zinc-800/50 p-1">

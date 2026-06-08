@@ -220,26 +220,36 @@ describe('ArtistPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Spotify monthly listeners' })).toBeInTheDocument();
     const panel = screen.getByTestId('monthly-listeners-panel');
+    const currentListenersChip = screen.getByText('87.4M monthly listeners');
 
     expect(panel).toHaveClass('overflow-hidden');
     expect(panel).toHaveClass('rounded-2xl');
     expect(panel).toHaveClass('border-zinc-800/60');
+    expect(currentListenersChip).toHaveClass('bg-amber-500/15');
+    expect(currentListenersChip).toHaveClass('text-amber-300');
     expect(within(panel).queryByText('Ariana Grande')).not.toBeInTheDocument();
     expect(within(panel).queryByAltText('Ariana Grande')).not.toBeInTheDocument();
-    expect(within(panel).getByText('Songs charting')).toHaveClass('bg-green-500/15');
-    expect(within(panel).getByText('Markets')).toHaveClass('bg-blue-500/15');
-    expect(within(panel).getByText('Daily filtered streams')).toHaveClass('bg-zinc-700/50');
+    expect(within(panel).getByText('Current listeners')).toBeInTheDocument();
+    expect(within(panel).getByText('Current position')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak listeners')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak position')).toBeInTheDocument();
     expect(within(panel).getByText('87.4M')).toBeInTheDocument();
-    expect(within(panel).getByText('monthly listeners')).toBeInTheDocument();
-    expect(within(panel).getByText('3 songs charting')).toBeInTheDocument();
-    expect(within(panel).getByText('3 markets')).toBeInTheDocument();
-    expect(within(panel).getByText('7.7M')).toBeInTheDocument();
     expect(within(panel).getByText('▲2')).toBeInTheDocument();
     expect(within(panel).queryByText('▲272.0K')).not.toBeInTheDocument();
     expect(within(panel).getByText('Up 2 today')).toBeInTheDocument();
     expect(screen.queryByText('+272.0K daily')).not.toBeInTheDocument();
     expect(within(panel).getByText('#14')).toBeInTheDocument();
-    expect(screen.getByText('Peak #1 · 127.0M')).toBeInTheDocument();
+    expect(within(panel).getByText('127.0M')).toBeInTheDocument();
+    expect(within(panel).getByText('#1')).toBeInTheDocument();
+    expect(within(panel).queryByText(/Songs charting/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/Markets/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText(/Daily filtered streams/i)).not.toBeInTheDocument();
+    expect(within(panel).queryByText('3 songs charting')).not.toBeInTheDocument();
+    expect(within(panel).queryByText('3 markets')).not.toBeInTheDocument();
+    expect(within(panel).queryByText('7.7M')).not.toBeInTheDocument();
+    expect(screen.getByText('3 songs charting')).toHaveClass('bg-green-500/15');
+    expect(screen.getByText('3 markets')).toHaveClass('bg-blue-500/15');
+    expect(screen.getByText('7.7M daily filtered streams')).toHaveClass('bg-zinc-700/50');
     expect(within(panel).getByRole('link', { name: /Full chart/i })).toHaveAttribute('href', '/charts/listeners');
     expect(within(panel).queryByText('Global listener chart position')).not.toBeInTheDocument();
     expect(screen.queryByText('Chart rank')).not.toBeInTheDocument();
@@ -267,9 +277,11 @@ describe('ArtistPage', () => {
 
     render(<ArtistPage />);
 
-    expect(await screen.findByText('88.0M')).toBeInTheDocument();
+    expect(await screen.findByText('88.0M monthly listeners')).toBeInTheDocument();
+    const panel = screen.getByTestId('monthly-listeners-panel');
+
+    expect(within(panel).getByText('88.0M')).toBeInTheDocument();
     expect(screen.getByText('▼1')).toBeInTheDocument();
-    expect(screen.getByText('monthly listeners')).toBeInTheDocument();
     expect(screen.getByText('Down 1 today')).toBeInTheDocument();
     expect(screen.queryByText('-50.0K daily')).not.toBeInTheDocument();
     expect(screen.getByText('#13')).toBeInTheDocument();
