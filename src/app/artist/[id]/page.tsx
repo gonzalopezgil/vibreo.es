@@ -105,11 +105,6 @@ function getFeaturedSongPosition(song: ChartingSong) {
   return topCountryPosition ?? song.positions[0];
 }
 
-function formatSignedCompact(value: number) {
-  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
-  return `${sign}${formatStreams(Math.abs(value))}`;
-}
-
 function ListenerRankChange({ currentRank, previousRank }: { currentRank?: number; previousRank?: number | null }) {
   if (typeof currentRank !== 'number' || typeof previousRank !== 'number' || previousRank <= 0) {
     return <span className="text-zinc-500 text-xs">-</span>;
@@ -123,12 +118,25 @@ function ListenerRankChange({ currentRank, previousRank }: { currentRank?: numbe
   return <span className="text-zinc-500 text-xs">=</span>;
 }
 
+function getListenerRankMovementLabel(currentRank?: number, previousRank?: number | null) {
+  if (typeof currentRank !== 'number' || typeof previousRank !== 'number' || previousRank <= 0) {
+    return null;
+  }
+  if (currentRank < previousRank) return `Up ${previousRank - currentRank} today`;
+  if (currentRank > previousRank) return `Down ${currentRank - previousRank} today`;
+  return 'Same position today';
+}
+
 function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
   if (typeof artist.monthly_listeners !== 'number') return null;
 
   const peakLabel = typeof artist.monthly_listeners_peak_listeners === 'number'
     ? `${typeof artist.monthly_listeners_peak_rank === 'number' ? `Peak #${artist.monthly_listeners_peak_rank} · ` : 'Peak '}${formatStreams(artist.monthly_listeners_peak_listeners)}`
     : null;
+  const rankMovementLabel = getListenerRankMovementLabel(
+    artist.monthly_listeners_rank,
+    artist.monthly_listeners_previous_rank,
+  );
 
   return (
     <section
@@ -141,7 +149,6 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
             <SpotifyIcon size={14} />
             Spotify monthly listeners
           </h2>
-          <p className="mt-0.5 truncate text-xs text-zinc-500">Global listener chart position</p>
         </div>
         <Link
           href="/charts/listeners"
@@ -180,11 +187,9 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-zinc-100">{artist.artist_name}</p>
           <p className="truncate text-xs text-zinc-500">
-            {typeof artist.monthly_listeners_daily_change === 'number' && (
-              <span>{formatSignedCompact(artist.monthly_listeners_daily_change)} daily</span>
-            )}
+            {rankMovementLabel && <span>{rankMovementLabel}</span>}
             {peakLabel && (
-              <span className={typeof artist.monthly_listeners_daily_change === 'number' ? 'ml-1.5' : ''}>
+              <span className={rankMovementLabel ? 'ml-1.5' : ''}>
                 {peakLabel}
               </span>
             )}

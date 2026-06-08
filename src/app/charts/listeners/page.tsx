@@ -1,34 +1,45 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, Search, User, X } from 'lucide-react';
+import { ChevronLeft, Loader2, Search, User, X } from 'lucide-react';
 import { FlagIcon } from '@/components/FlagIcon';
 import { SpotifyIcon } from '@/components/PlatformIcons';
 import { VideoHero } from '@/components/VideoHero';
-import { getChartingListenersPage, getErrorMessage, type ListenerChartEntry } from '@/lib/api';
+import {
+  getArtistListener,
+  getChartingArtists,
+  getChartingListenersPage,
+  getErrorMessage,
+  getHeroVideoUrl,
+  getYouTubeLinks,
+  searchAll,
+  type ListenerChartEntry,
+  type YouTubeLinks,
+} from '@/lib/api';
 import { formatStreams } from '@/lib/format';
 
 const PAGE_SIZE = 100;
-const CHART_TABS = [
-  { href: '/charts/global/songs/latest', label: 'Songs' },
-  { href: '/charts/global/artists/latest', label: 'Artists' },
-  { href: '/charts/global/albums/latest', label: 'Albums' },
-  { href: '/charts/listeners', label: 'Listeners', active: true },
-];
+const SEARCH_RESULT_LIMIT = 10;
+
+type SearchResultItem = NonNullable<Awaited<ReturnType<typeof searchAll>>['topResult']>;
+
+interface ChartingArtistSong {
+  track_uri: string;
+}
+
+interface ChartingArtistData {
+  songs?: ChartingArtistSong[];
+}
 
 function formatSignedCompact(value: number) {
   const sign = value > 0 ? '+' : value < 0 ? '-' : '';
   return `${sign}${formatStreams(Math.abs(value))}`;
 }
 
-function normalize(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
+function extractId(uri: string) {
+  return uri.split(':').pop() || uri;
 }
 
 function RankChangeIndicator({ entry }: { entry: ListenerChartEntry }) {
@@ -93,7 +104,7 @@ function ListenerChartRow({
       </div>
 
       <div className="shrink-0 text-right">
-        <p className="text-sm font-bold tabular-nums text-zinc-100">{formatStreams(entry.listeners)} listeners</p>
+        <p className="text-sm font-bold tabular-nums text-zinc-100">{formatStreams(entry.listeners)}</p>
       </div>
     </Link>
   );
@@ -136,12 +147,17 @@ function HeroHighlightSkeleton() {
 
 export default function ListenerChartPage() {
   const [entries, setEntries] = useState<ListenerChartEntry[]>([]);
-  const [total, setTotal] = useState(0);
   const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterQuery, setFilterQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ListenerChartEntry[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [artistHeroSongs, setArtistHeroSongs] = useState<ChartingArtistSong[]>([]);
+  const [ytLinksMap, setYtLinksMap] = useState<YouTubeLinks>({});
+  const latestSearchRef = useRef(0);
 
   async function loadPage(offset: number) {
     if (offset === 0) setLoading(true);
@@ -151,8 +167,18 @@ export default function ListenerChartPage() {
     try {
       const page = await getChartingListenersPage({ limit: PAGE_SIZE, offset });
       setEntries((current) => (offset === 0 ? page.items : [...current, ...page.items]));
-      setTotal(page.total);
       setNextOffset(page.nextOffset);
+
+      if (offset === 0) {
+        const topArtistUri = page.items[0]?.artist_uri;
+        const [chartingArtistsData, ytData] = await Promise.all([
+          getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
+          getYouTubeLinks().catch(() => ({} as YouTubeLinks)),
+        ]);
+
+        setArtistHeroSongs(topArtistUri ? chartingArtistsData[topArtistUri]?.songs || [] : []);
+        setYtLinksMap(ytData);
+      }
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Failed to load listener chart'));
     } finally {
@@ -165,29 +191,66 @@ export default function ListenerChartPage() {
     void loadPage(0);
   }, []);
 
-  const filteredEntries = useMemo(() => {
-    const query = normalize(filterQuery);
-    if (!query) return entries;
+  useEffect(() => {
+    const trimmed = filterQuery.trim();
+    if (!trimmed) {
+      latestSearchRef.current += 1;
+      setSearchResults(null);
+      setSearching(false);
+      setSearchError(null);
+      return;
+    }
 
-    return entries.filter((entry) => normalize(entry.artist_name || entry.artist_id).includes(query));
-  }, [entries, filterQuery]);
+    const requestId = ++latestSearchRef.current;
+    const timeout = setTimeout(async () => {
+      try {
+        setSearching(true);
+        setSearchError(null);
 
-  const hasFilter = filterQuery.trim().length > 0;
+        const data = await searchAll(trimmed);
+        if (latestSearchRef.current !== requestId) return;
+
+        const seen = new Set<string>();
+        const artistCandidates: SearchResultItem[] = [];
+        const pushArtist = (item: SearchResultItem | null) => {
+          if (!item || item.type !== 'artist' || seen.has(item.uri)) return;
+          seen.add(item.uri);
+          artistCandidates.push(item);
+        };
+
+        pushArtist(data.topResult);
+        data.artists.forEach(pushArtist);
+
+        const listenerRows = await Promise.all(
+          artistCandidates.slice(0, SEARCH_RESULT_LIMIT).map((item) => (
+            getArtistListener(extractId(item.uri)).catch(() => null)
+          )),
+        );
+        if (latestSearchRef.current !== requestId) return;
+
+        setSearchResults(listenerRows.filter((entry): entry is ListenerChartEntry => Boolean(entry)));
+      } catch (err: unknown) {
+        if (latestSearchRef.current !== requestId) return;
+        setSearchResults([]);
+        setSearchError(getErrorMessage(err, 'Search failed'));
+      } finally {
+        if (latestSearchRef.current === requestId) setSearching(false);
+      }
+    }, 180);
+
+    return () => clearTimeout(timeout);
+  }, [filterQuery]);
+
+  const hasQuery = filterQuery.trim().length > 0;
   const topEntry = entries[0] || null;
-  const countLabel = (() => {
-    if (hasFilter) {
-      const loadedLabel = nextOffset !== null ? ' loaded artists' : ' artists';
-      return `${filteredEntries.length.toLocaleString()} of ${entries.length.toLocaleString()}${loadedLabel}`;
-    }
-    if (total > 0) {
-      return `${entries.length.toLocaleString()} of ${total.toLocaleString()} loaded`;
-    }
-    return 'Latest snapshot';
-  })();
+  const displayEntries = hasQuery ? (searchResults ?? []) : entries;
+  const heroSourceSong = artistHeroSongs.find((song) => ytLinksMap[song.track_uri]?.v) || null;
+  const heroVideoSrc = heroSourceSong ? getHeroVideoUrl(extractId(heroSourceSong.track_uri)) : null;
 
   return (
     <main className="min-h-screen pb-24">
       <VideoHero
+        videoSrc={heroVideoSrc}
         className="z-20"
         allowOverflow
         fallbackClassName="bg-zinc-950"
@@ -220,33 +283,14 @@ export default function ListenerChartPage() {
             </div>
           </div>
 
-          <div className="flex gap-1 rounded-xl bg-zinc-800/50 p-1 backdrop-blur-sm">
-            {CHART_TABS.map((tab) => (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={`flex-1 rounded-lg px-3 py-2 text-center text-xs font-semibold transition ${
-                  tab.active
-                    ? 'bg-zinc-700 text-zinc-100'
-                    : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
-
           <header>
             <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
               <SpotifyIcon size={14} />
               Spotify Monthly Listeners
             </p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-zinc-100">
-              Monthly Listener Chart
+              Monthly Listeners
             </h1>
-            <p className="mt-2 text-sm text-zinc-400">
-              {countLabel}
-            </p>
 
             {loading ? (
               <HeroHighlightSkeleton />
@@ -285,16 +329,24 @@ export default function ListenerChartPage() {
                 type="text"
                 value={filterQuery}
                 onChange={(e) => setFilterQuery(e.target.value)}
-                placeholder="Filter by artist"
+                placeholder="Search artists"
                 disabled={loading}
                 className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2.5 pl-10 pr-10 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition focus:border-zinc-600 disabled:cursor-not-allowed disabled:text-zinc-500 disabled:opacity-80"
               />
+              {searching && (
+                <Loader2
+                  size={16}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-zinc-500"
+                />
+              )}
               {filterQuery && !loading && (
                 <button
                   type="button"
                   onClick={() => setFilterQuery('')}
                   aria-label="Clear listener search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-zinc-300"
+                  className={`absolute top-1/2 -translate-y-1/2 text-zinc-500 transition hover:text-zinc-300 ${
+                    searching ? 'right-9' : 'right-3'
+                  }`}
                 >
                   <X size={16} />
                 </button>
@@ -314,6 +366,12 @@ export default function ListenerChartPage() {
         </div>
       )}
 
+      {searchError && !error && (
+        <div className="mx-auto mt-4 w-full max-w-3xl px-4 text-sm text-red-300">
+          {searchError}
+        </div>
+      )}
+
       {!error && (
         <section className="mx-auto mt-0 w-full max-w-3xl min-h-0 px-0 sm:px-4">
           <div
@@ -330,15 +388,21 @@ export default function ListenerChartPage() {
               ? Array.from({ length: 20 }).map((_, index) => (
                 <ListenerRowSkeleton key={index} index={index} />
               ))
-              : filteredEntries.length === 0
+              : searching
+                ? (
+                  <div className="px-4 py-8 text-center text-sm text-zinc-500">
+                    Searching all artists...
+                  </div>
+                )
+                : displayEntries.length === 0
                 ? (
                   <div className="px-4 py-8 text-center text-sm text-zinc-500">
                     {filterQuery.trim()
-                      ? <>No matches for &ldquo;{filterQuery.trim()}&rdquo; in this chart.</>
+                      ? <>No listener results for &ldquo;{filterQuery.trim()}&rdquo;.</>
                       : 'No listener data available.'}
                   </div>
                 )
-                : filteredEntries.map((entry, index) => (
+                : displayEntries.map((entry, index) => (
                   <ListenerChartRow key={entry.artist_uri} entry={entry} index={index} />
                 ))
             }
@@ -346,7 +410,7 @@ export default function ListenerChartPage() {
         </section>
       )}
 
-      {nextOffset !== null && !loading && !error && (
+      {nextOffset !== null && !loading && !error && !hasQuery && (
         <div className="mx-auto mt-5 w-full max-w-3xl px-4">
           <button
             type="button"

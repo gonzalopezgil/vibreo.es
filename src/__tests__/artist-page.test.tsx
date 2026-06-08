@@ -209,10 +209,12 @@ describe('ArtistPage', () => {
     expect(within(panel).getByText('monthly listeners')).toBeInTheDocument();
     expect(within(panel).getByText('▲2')).toBeInTheDocument();
     expect(within(panel).queryByText('▲272.0K')).not.toBeInTheDocument();
-    expect(screen.getByText('+272.0K daily')).toBeInTheDocument();
+    expect(within(panel).getByText('Up 2 today')).toBeInTheDocument();
+    expect(screen.queryByText('+272.0K daily')).not.toBeInTheDocument();
     expect(within(panel).getByText('#14')).toBeInTheDocument();
     expect(screen.getByText('Peak #1 · 127.0M')).toBeInTheDocument();
     expect(within(panel).getByRole('link', { name: /Full chart/i })).toHaveAttribute('href', '/charts/listeners');
+    expect(within(panel).queryByText('Global listener chart position')).not.toBeInTheDocument();
     expect(screen.queryByText('Chart rank')).not.toBeInTheDocument();
   });
 
@@ -241,7 +243,8 @@ describe('ArtistPage', () => {
     expect(await screen.findByText('88.0M')).toBeInTheDocument();
     expect(screen.getByText('▼1')).toBeInTheDocument();
     expect(screen.getByText('monthly listeners')).toBeInTheDocument();
-    expect(screen.getByText('-50.0K daily')).toBeInTheDocument();
+    expect(screen.getByText('Down 1 today')).toBeInTheDocument();
+    expect(screen.queryByText('-50.0K daily')).not.toBeInTheDocument();
     expect(screen.getByText('#13')).toBeInTheDocument();
     expect(mockedGetArtistListener).toHaveBeenCalledWith('ariana');
     expect(mockedGetChartingListeners).not.toHaveBeenCalled();
