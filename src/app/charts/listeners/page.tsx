@@ -67,6 +67,18 @@ function RankChangeIndicator({ entry }: { entry: ListenerChartEntry }) {
   return <span className="text-zinc-500 text-xs">=</span>;
 }
 
+function isListenerPeak(entry: ListenerChartEntry) {
+  return typeof entry.peak_listeners === 'number' && entry.peak_listeners > 0 && entry.listeners >= entry.peak_listeners;
+}
+
+function isRankPeak(entry: ListenerChartEntry) {
+  return typeof entry.peak_rank === 'number' && entry.peak_rank > 0 && entry.rank <= entry.peak_rank;
+}
+
+function getPeakLabelClass(isAtPeak: boolean) {
+  return `text-[11px] font-normal ${isAtPeak ? 'text-amber-300' : 'text-zinc-500'}`;
+}
+
 function ListenerChartRow({
   entry,
   index,
@@ -83,7 +95,9 @@ function ListenerChartRow({
     >
       <div className="flex w-8 shrink-0 flex-col items-center gap-0.5">
         <RankChangeIndicator entry={entry} />
-        <span className="tabular-nums text-sm font-bold text-zinc-400">{entry.rank}</span>
+        <span className={`tabular-nums text-sm font-bold ${isRankPeak(entry) ? 'text-amber-300' : 'text-zinc-400'}`}>
+          {entry.rank}
+        </span>
       </div>
 
       {entry.image_url ? (
@@ -104,19 +118,16 @@ function ListenerChartRow({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-zinc-100">{entry.artist_name || entry.artist_id}</p>
-        <p className="text-xs text-zinc-500">
-          {formatSignedCompact(entry.daily_change)} daily
-          {entry.peak_listeners > 0 && (
-            <span className="ml-1.5">
-              {entry.peak_rank ? `Peak #${entry.peak_rank} · ` : 'Peak '}
-              {formatStreams(entry.peak_listeners)}
-            </span>
-          )}
-        </p>
+        <p className="text-xs text-zinc-500">{formatSignedCompact(entry.daily_change)} daily</p>
       </div>
 
       <div className="shrink-0 text-right">
         <p className="text-sm font-bold tabular-nums text-zinc-100">{formatStreams(entry.listeners)}</p>
+        {entry.peak_listeners > 0 && (
+          <p className={getPeakLabelClass(isListenerPeak(entry))}>
+            Peak {formatStreams(entry.peak_listeners)}
+          </p>
+        )}
       </div>
     </Link>
   );

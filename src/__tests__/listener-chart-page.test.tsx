@@ -158,11 +158,15 @@ describe('ListenerChartPage', () => {
     expect(within(alphaRow).queryByText('▲10.0K')).not.toBeInTheDocument();
     expect(screen.getByText('100.0M')).toBeInTheDocument();
     expect(within(alphaRow).queryByText('100.0M listeners')).not.toBeInTheDocument();
-    expect(screen.getByText('+10.0K daily')).toBeInTheDocument();
-    expect(screen.getByText('Peak #1 · 105.0M')).toBeInTheDocument();
+    expect(within(alphaRow).getByText('+10.0K daily')).toBeInTheDocument();
+    expect(within(alphaRow).queryByText('Peak #1 · 105.0M')).not.toBeInTheDocument();
+    expect(within(alphaRow).getByText('Peak 105.0M')).toHaveClass('text-zinc-500');
+    expect(within(alphaRow).getByText('1')).toHaveClass('text-amber-300');
     expect(screen.getByRole('link', { name: /Alpha Artist/i })).toHaveAttribute('href', '/artist/alpha');
     const bravoRow = screen.getByRole('link', { name: /Bravo Artist/i });
     expect(within(bravoRow).getByText('-')).toBeInTheDocument();
+    expect(within(bravoRow).getByText('Peak 92.0M')).toHaveClass('text-zinc-500');
+    expect(within(bravoRow).getByText('2')).toHaveClass('text-zinc-400');
 
     fireEvent.click(screen.getByRole('button', { name: /Load more/i }));
 
@@ -172,6 +176,37 @@ describe('ListenerChartPage', () => {
     });
     expect(mockedGetChartingListenersPage).toHaveBeenNthCalledWith(1, { limit: 100, offset: 0 });
     expect(mockedGetChartingListenersPage).toHaveBeenNthCalledWith(2, { limit: 100, offset: 100 });
+  });
+
+  it('highlights listener peak labels and rank numbers when artists are at their peaks', async () => {
+    mockedGetChartingListenersPage.mockResolvedValueOnce({
+      items: [
+        {
+          artist_uri: 'spotify:artist:peak',
+          artist_id: 'peak',
+          artist_name: 'Peak Artist',
+          image_url: 'https://i.scdn.co/image/peak.jpg',
+          rank: 4,
+          previous_rank: 4,
+          listeners: 113_090_460,
+          daily_change: 106_480,
+          peak_rank: 4,
+          peak_listeners: 113_090_460,
+        },
+      ],
+      limit: 100,
+      nextOffset: null,
+      offset: 0,
+      total: 1,
+    });
+
+    render(<ListenerChartPage />);
+
+    const peakRow = await screen.findByRole('link', { name: /Peak Artist/i });
+
+    expect(within(peakRow).getByText('113.1M')).toBeInTheDocument();
+    expect(within(peakRow).getByText('Peak 113.1M')).toHaveClass('text-amber-300');
+    expect(within(peakRow).getByText('4')).toHaveClass('text-amber-300');
   });
 
   it('uses the same chart shell conventions as the artist chart page without chart tabs or count copy', async () => {
