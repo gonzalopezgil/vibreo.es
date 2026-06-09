@@ -328,10 +328,17 @@ describe('ListenerChartPage', () => {
 
     const heading = await screen.findByRole('heading', { name: 'Monthly Listeners' });
     const hero = heading.closest('section');
+    const heroContent = heading.closest('.mx-auto');
 
     await waitFor(() => {
       expect(hero?.querySelector('video')).toHaveAttribute('src', '/hero.mp4');
     });
+    const video = hero?.querySelector('video');
+    expect(hero).not.toHaveClass('min-h-[calc(75svh-2.625rem)]');
+    expect(hero).toHaveClass('overflow-hidden');
+    expect(heroContent).not.toHaveClass('min-h-[calc(75svh-2.625rem)]');
+    expect(video).toHaveClass('h-[100svh]');
+    expect(video).toHaveClass('w-full');
     expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('hero-song');
   });
 

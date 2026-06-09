@@ -279,7 +279,7 @@ export default function ListenerChartPage() {
       <VideoHero
         videoSrc={heroVideoSrc}
         className="z-20"
-        allowOverflow
+        backgroundLayerClassName="absolute inset-x-0 top-0 h-[100svh] w-full"
         fallbackClassName="bg-zinc-950"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
         fallbackMedia={topEntry?.image_url ? (

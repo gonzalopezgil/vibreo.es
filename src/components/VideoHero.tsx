@@ -36,6 +36,8 @@ interface VideoHeroProps {
   fallbackMedia?: ReactNode;
   /** Extra classes applied to the outer wrapper */
   className?: string;
+  /** Classes applied to the non-layout background media layers */
+  backgroundLayerClassName?: string;
   /** Allow popovers inside the hero to escape the section bounds */
   allowOverflow?: boolean;
   /** aria-label for the section element */
@@ -49,6 +51,7 @@ export function VideoHero({
   children,
   fallbackMedia,
   className = '',
+  backgroundLayerClassName = 'absolute inset-0',
   allowOverflow = false,
   label,
 }: VideoHeroProps) {
@@ -105,7 +108,7 @@ export function VideoHero({
       {/* ── Background layer ──────────────────────────────────── */}
       {/* Fallback gradient — always rendered, hidden by video once ready */}
       <div
-        className={`absolute inset-0 overflow-hidden ${fallbackClassName} transition-opacity duration-700 ${
+        className={`${backgroundLayerClassName} overflow-hidden ${fallbackClassName} transition-opacity duration-700 ${
           hasVideo && videoReady ? 'opacity-0' : 'opacity-100'
         }`}
         aria-hidden="true"
@@ -122,7 +125,7 @@ export function VideoHero({
           loop
           playsInline
           preload="auto"
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+          className={`${backgroundLayerClassName} object-cover transition-opacity duration-700 ${
             videoReady ? 'opacity-100' : 'opacity-0'
           }`}
           aria-hidden="true"
@@ -133,7 +136,7 @@ export function VideoHero({
 
       {/* ── Dark gradient overlay, shared by video and placeholder states ── */}
       <div
-        className={`absolute inset-0 ${overlayClassName} pointer-events-none`}
+        className={`${backgroundLayerClassName} ${overlayClassName} pointer-events-none`}
         aria-hidden="true"
       />
 
