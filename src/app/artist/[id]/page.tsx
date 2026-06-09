@@ -130,6 +130,14 @@ function getPeakLabelClass(isAtPeak: boolean) {
   return `text-[11px] font-normal ${isAtPeak ? 'text-amber-300' : 'text-zinc-500'}`;
 }
 
+function getPeakValueClass(isAtPeak: boolean) {
+  return `tabular-nums ${isAtPeak ? 'text-amber-300' : ''}`;
+}
+
+function formatPeakLabel(isAtPeak: boolean, peakValue: string) {
+  return isAtPeak ? 'Peak' : `Peak ${peakValue}`;
+}
+
 function MonthlyListenerDetailRow({
   label,
   children,
@@ -182,9 +190,9 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
       <div className="divide-y divide-zinc-800/40">
         <MonthlyListenerDetailRow label="Monthly listeners">
           <span className="flex flex-col items-end gap-0.5">
-            <span className="tabular-nums">{formatStreams(artist.monthly_listeners)}</span>
+            <span className={getPeakValueClass(isAtListenersPeak)}>{formatStreams(artist.monthly_listeners)}</span>
             <span className={getPeakLabelClass(isAtListenersPeak)}>
-              Peak {formatOptionalStreams(artist.monthly_listeners_peak_listeners)}
+              {formatPeakLabel(isAtListenersPeak, formatOptionalStreams(artist.monthly_listeners_peak_listeners))}
             </span>
           </span>
         </MonthlyListenerDetailRow>
@@ -198,10 +206,10 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
                   previousRank={artist.monthly_listeners_previous_rank}
                 />
               )}
-              <span className="tabular-nums">{formatRank(artist.monthly_listeners_rank)}</span>
+              <span className={getPeakValueClass(isAtRankPeak)}>{formatRank(artist.monthly_listeners_rank)}</span>
             </span>
             <span className={getPeakLabelClass(isAtRankPeak)}>
-              Peak {formatRank(artist.monthly_listeners_peak_rank)}
+              {formatPeakLabel(isAtRankPeak, formatRank(artist.monthly_listeners_peak_rank))}
             </span>
           </span>
         </MonthlyListenerDetailRow>

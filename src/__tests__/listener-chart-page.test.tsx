@@ -178,7 +178,7 @@ describe('ListenerChartPage', () => {
     expect(mockedGetChartingListenersPage).toHaveBeenNthCalledWith(2, { limit: 100, offset: 100 });
   });
 
-  it('highlights listener peak labels and rank numbers when artists are at their peaks', async () => {
+  it('highlights listener values and uses a plain peak label when artists are at their listener peaks', async () => {
     mockedGetChartingListenersPage.mockResolvedValueOnce({
       items: [
         {
@@ -204,8 +204,11 @@ describe('ListenerChartPage', () => {
 
     const peakRow = await screen.findByRole('link', { name: /Peak Artist/i });
 
-    expect(within(peakRow).getByText('113.1M')).toBeInTheDocument();
-    expect(within(peakRow).getByText('Peak 113.1M')).toHaveClass('text-amber-300');
+    expect(within(peakRow).getByText('113.1M')).toHaveClass('text-amber-300');
+    expect(within(peakRow).queryByText('Peak 113.1M')).not.toBeInTheDocument();
+    const peakLabels = within(peakRow).getAllByText('Peak');
+    expect(peakLabels).toHaveLength(1);
+    expect(peakLabels[0]).toHaveClass('text-amber-300');
     expect(within(peakRow).getByText('4')).toHaveClass('text-amber-300');
   });
 
@@ -235,8 +238,11 @@ describe('ListenerChartPage', () => {
 
     const heading = await screen.findByRole('heading', { name: 'Monthly Listeners' });
     const hero = heading.closest('section');
+    const heroContent = heading.closest('.mx-auto');
 
     expect(hero).toHaveClass('after:bg-gradient-to-b');
+    expect(hero).toHaveClass('min-h-[calc(75svh-2.625rem)]');
+    expect(heroContent).toHaveClass('min-h-[calc(75svh-2.625rem)]');
     expect(screen.getByText('Spotify Monthly Listeners')).toBeInTheDocument();
     expect(screen.getByText('Global')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Monthly Listener Chart' })).not.toBeInTheDocument();

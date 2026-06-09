@@ -282,10 +282,15 @@ describe('ArtistPage', () => {
     expect(await screen.findByText('127.0M monthly listeners')).toBeInTheDocument();
     const panel = screen.getByTestId('monthly-listeners-panel');
 
-    expect(within(panel).getByText('127.0M')).toBeInTheDocument();
-    expect(within(panel).getByText('Peak 127.0M')).toHaveClass('text-amber-300');
-    expect(within(panel).getByText('#1')).toBeInTheDocument();
-    expect(within(panel).getByText('Peak #1')).toHaveClass('text-amber-300');
+    expect(within(panel).getByText('127.0M')).toHaveClass('text-amber-300');
+    expect(within(panel).queryByText('Peak 127.0M')).not.toBeInTheDocument();
+    expect(within(panel).getByText('#1')).toHaveClass('text-amber-300');
+    expect(within(panel).queryByText('Peak #1')).not.toBeInTheDocument();
+    const peakLabels = within(panel).getAllByText('Peak');
+    expect(peakLabels).toHaveLength(2);
+    peakLabels.forEach((label) => {
+      expect(label).toHaveClass('text-amber-300');
+    });
   });
 
   it('requests only this artist listener record instead of the full listener map', async () => {

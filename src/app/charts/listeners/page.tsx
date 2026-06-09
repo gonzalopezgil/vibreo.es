@@ -79,6 +79,14 @@ function getPeakLabelClass(isAtPeak: boolean) {
   return `text-[11px] font-normal ${isAtPeak ? 'text-amber-300' : 'text-zinc-500'}`;
 }
 
+function getListenerValueClass(isAtPeak: boolean) {
+  return `text-sm font-bold tabular-nums ${isAtPeak ? 'text-amber-300' : 'text-zinc-100'}`;
+}
+
+function formatPeakLabel(isAtPeak: boolean, peakValue: string) {
+  return isAtPeak ? 'Peak' : `Peak ${peakValue}`;
+}
+
 function ListenerChartRow({
   entry,
   index,
@@ -122,10 +130,10 @@ function ListenerChartRow({
       </div>
 
       <div className="shrink-0 text-right">
-        <p className="text-sm font-bold tabular-nums text-zinc-100">{formatStreams(entry.listeners)}</p>
+        <p className={getListenerValueClass(isListenerPeak(entry))}>{formatStreams(entry.listeners)}</p>
         {entry.peak_listeners > 0 && (
           <p className={getPeakLabelClass(isListenerPeak(entry))}>
-            Peak {formatStreams(entry.peak_listeners)}
+            {formatPeakLabel(isListenerPeak(entry), formatStreams(entry.peak_listeners))}
           </p>
         )}
       </div>
@@ -270,7 +278,7 @@ export default function ListenerChartPage() {
     <main className="min-h-screen pb-24">
       <VideoHero
         videoSrc={heroVideoSrc}
-        className="z-20"
+        className="z-20 min-h-[calc(75svh-2.625rem)]"
         allowOverflow
         fallbackClassName="bg-zinc-950"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
@@ -286,7 +294,7 @@ export default function ListenerChartPage() {
           />
         ) : null}
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pt-8 pb-5">
+        <div className="mx-auto flex min-h-[calc(75svh-2.625rem)] w-full max-w-3xl flex-col gap-5 px-4 pt-8 pb-5">
           <div className="flex items-center justify-between gap-3">
             <Link
               href="/charts"
