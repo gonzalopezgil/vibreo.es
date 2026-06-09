@@ -241,8 +241,11 @@ describe('ListenerChartPage', () => {
     const heroContent = heading.closest('.mx-auto');
 
     expect(hero).toHaveClass('after:bg-gradient-to-b');
-    expect(hero).toHaveClass('min-h-[calc(75svh-2.625rem)]');
-    expect(heroContent).toHaveClass('min-h-[calc(75svh-2.625rem)]');
+    expect(hero).toHaveClass('z-20');
+    expect(hero).not.toHaveClass('min-h-[calc(75svh-2.625rem)]');
+    expect(heroContent).toHaveClass('gap-5');
+    expect(heroContent).toHaveClass('pb-5');
+    expect(heroContent).not.toHaveClass('min-h-[calc(75svh-2.625rem)]');
     expect(screen.getByText('Spotify Monthly Listeners')).toBeInTheDocument();
     expect(screen.getByText('Global')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Monthly Listener Chart' })).not.toBeInTheDocument();

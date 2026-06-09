@@ -278,7 +278,7 @@ export default function ListenerChartPage() {
     <main className="min-h-screen pb-24">
       <VideoHero
         videoSrc={heroVideoSrc}
-        className="z-20 min-h-[calc(75svh-2.625rem)]"
+        className="z-20"
         allowOverflow
         fallbackClassName="bg-zinc-950"
         overlayClassName="bg-gradient-to-b from-black/70 via-black/50 to-zinc-950/90"
@@ -294,7 +294,7 @@ export default function ListenerChartPage() {
           />
         ) : null}
       >
-        <div className="mx-auto flex min-h-[calc(75svh-2.625rem)] w-full max-w-3xl flex-col gap-5 px-4 pt-8 pb-5">
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 pt-8 pb-5">
           <div className="flex items-center justify-between gap-3">
             <Link
               href="/charts"
