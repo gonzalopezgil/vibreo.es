@@ -118,15 +118,6 @@ function ListenerRankChange({ currentRank, previousRank }: { currentRank?: numbe
   return <span className="text-zinc-500 text-xs">=</span>;
 }
 
-function getListenerRankMovementLabel(currentRank?: number, previousRank?: number | null) {
-  if (typeof currentRank !== 'number' || typeof previousRank !== 'number' || previousRank <= 0) {
-    return null;
-  }
-  if (currentRank < previousRank) return `Up ${previousRank - currentRank} today`;
-  if (currentRank > previousRank) return `Down ${currentRank - previousRank} today`;
-  return 'Same position today';
-}
-
 function formatRank(rank?: number | null) {
   return typeof rank === 'number' ? `#${rank}` : '—';
 }
@@ -153,10 +144,6 @@ function MonthlyListenerDetailRow({
 function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
   if (typeof artist.monthly_listeners !== 'number') return null;
 
-  const rankMovementLabel = getListenerRankMovementLabel(
-    artist.monthly_listeners_rank,
-    artist.monthly_listeners_previous_rank,
-  );
   const hasRankMovement = typeof artist.monthly_listeners_rank === 'number'
     && typeof artist.monthly_listeners_previous_rank === 'number'
     && artist.monthly_listeners_previous_rank > 0;
@@ -183,11 +170,16 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
       </div>
 
       <div className="divide-y divide-zinc-800/40">
-        <MonthlyListenerDetailRow label="Current listeners">
-          <span className="tabular-nums">{formatStreams(artist.monthly_listeners)}</span>
+        <MonthlyListenerDetailRow label="Monthly listeners">
+          <span className="flex flex-col items-end gap-0.5">
+            <span className="tabular-nums">{formatStreams(artist.monthly_listeners)}</span>
+            <span className="text-[11px] font-normal text-zinc-500">
+              Peak {formatOptionalStreams(artist.monthly_listeners_peak_listeners)}
+            </span>
+          </span>
         </MonthlyListenerDetailRow>
 
-        <MonthlyListenerDetailRow label="Current position">
+        <MonthlyListenerDetailRow label="Top Artists">
           <span className="flex flex-col items-end gap-0.5">
             <span className="inline-flex items-center gap-1.5">
               {hasRankMovement && (
@@ -198,18 +190,10 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
               )}
               <span className="tabular-nums">{formatRank(artist.monthly_listeners_rank)}</span>
             </span>
-            {rankMovementLabel && (
-              <span className="text-[11px] font-normal text-zinc-500">{rankMovementLabel}</span>
-            )}
+            <span className="text-[11px] font-normal text-zinc-500">
+              Peak {formatRank(artist.monthly_listeners_peak_rank)}
+            </span>
           </span>
-        </MonthlyListenerDetailRow>
-
-        <MonthlyListenerDetailRow label="Peak listeners">
-          <span className="tabular-nums">{formatOptionalStreams(artist.monthly_listeners_peak_listeners)}</span>
-        </MonthlyListenerDetailRow>
-
-        <MonthlyListenerDetailRow label="Peak position">
-          <span className="tabular-nums">{formatRank(artist.monthly_listeners_peak_rank)}</span>
         </MonthlyListenerDetailRow>
       </div>
     </section>
