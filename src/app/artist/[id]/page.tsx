@@ -126,6 +126,10 @@ function formatOptionalStreams(streams?: number | null) {
   return typeof streams === 'number' ? formatStreams(streams) : '—';
 }
 
+function getPeakLabelClass(isAtPeak: boolean) {
+  return `text-[11px] font-normal ${isAtPeak ? 'text-amber-300' : 'text-zinc-500'}`;
+}
+
 function MonthlyListenerDetailRow({
   label,
   children,
@@ -147,6 +151,12 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
   const hasRankMovement = typeof artist.monthly_listeners_rank === 'number'
     && typeof artist.monthly_listeners_previous_rank === 'number'
     && artist.monthly_listeners_previous_rank > 0;
+  const isAtListenersPeak = typeof artist.monthly_listeners_peak_listeners === 'number'
+    && artist.monthly_listeners >= artist.monthly_listeners_peak_listeners;
+  const isAtRankPeak = typeof artist.monthly_listeners_rank === 'number'
+    && artist.monthly_listeners_rank > 0
+    && typeof artist.monthly_listeners_peak_rank === 'number'
+    && artist.monthly_listeners_rank <= artist.monthly_listeners_peak_rank;
 
   return (
     <section
@@ -173,7 +183,7 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
         <MonthlyListenerDetailRow label="Monthly listeners">
           <span className="flex flex-col items-end gap-0.5">
             <span className="tabular-nums">{formatStreams(artist.monthly_listeners)}</span>
-            <span className="text-[11px] font-normal text-zinc-500">
+            <span className={getPeakLabelClass(isAtListenersPeak)}>
               Peak {formatOptionalStreams(artist.monthly_listeners_peak_listeners)}
             </span>
           </span>
@@ -190,7 +200,7 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
               )}
               <span className="tabular-nums">{formatRank(artist.monthly_listeners_rank)}</span>
             </span>
-            <span className="text-[11px] font-normal text-zinc-500">
+            <span className={getPeakLabelClass(isAtRankPeak)}>
               Peak {formatRank(artist.monthly_listeners_peak_rank)}
             </span>
           </span>

@@ -236,13 +236,13 @@ describe('ArtistPage', () => {
     expect(within(panel).queryByText('Peak listeners')).not.toBeInTheDocument();
     expect(within(panel).queryByText('Peak position')).not.toBeInTheDocument();
     expect(within(panel).getByText('87.4M')).toBeInTheDocument();
-    expect(within(panel).getByText('Peak 127.0M')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak 127.0M')).toHaveClass('text-zinc-500');
     expect(within(panel).getByText('▲2')).toBeInTheDocument();
     expect(within(panel).queryByText('▲272.0K')).not.toBeInTheDocument();
     expect(within(panel).queryByText('Up 2 today')).not.toBeInTheDocument();
     expect(screen.queryByText('+272.0K daily')).not.toBeInTheDocument();
     expect(within(panel).getByText('#14')).toBeInTheDocument();
-    expect(within(panel).getByText('Peak #1')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak #1')).toHaveClass('text-zinc-500');
     expect(within(panel).queryByText(/Songs charting/i)).not.toBeInTheDocument();
     expect(within(panel).queryByText(/Markets/i)).not.toBeInTheDocument();
     expect(within(panel).queryByText(/Daily filtered streams/i)).not.toBeInTheDocument();
@@ -255,6 +255,37 @@ describe('ArtistPage', () => {
     expect(within(panel).getByRole('link', { name: /Full chart/i })).toHaveAttribute('href', '/charts/listeners');
     expect(within(panel).queryByText('Global listener chart position')).not.toBeInTheDocument();
     expect(screen.queryByText('Chart rank')).not.toBeInTheDocument();
+  });
+
+  it('highlights peak labels when current listener metrics match their peaks', async () => {
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [],
+        positions: [],
+      },
+    });
+    mockedGetArtistListener.mockResolvedValue({
+      artist_uri: 'spotify:artist:ariana',
+      artist_id: 'ariana',
+      artist_name: 'Ariana Grande',
+      image_url: 'https://i.scdn.co/image/ariana.jpg',
+      listeners: 126_970_279,
+      daily_change: 100_000,
+      rank: 1,
+      previous_rank: 2,
+      peak_rank: 1,
+      peak_listeners: 126_970_279,
+    });
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByText('127.0M monthly listeners')).toBeInTheDocument();
+    const panel = screen.getByTestId('monthly-listeners-panel');
+
+    expect(within(panel).getByText('127.0M')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak 127.0M')).toHaveClass('text-amber-300');
+    expect(within(panel).getByText('#1')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak #1')).toHaveClass('text-amber-300');
   });
 
   it('requests only this artist listener record instead of the full listener map', async () => {
