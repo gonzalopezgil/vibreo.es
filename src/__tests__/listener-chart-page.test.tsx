@@ -335,9 +335,10 @@ describe('ListenerChartPage', () => {
     });
     const video = hero?.querySelector('video');
     expect(hero).not.toHaveClass('min-h-[calc(75svh-2.625rem)]');
-    expect(hero).toHaveClass('overflow-hidden');
+    expect(hero).toHaveClass('overflow-visible');
     expect(heroContent).not.toHaveClass('min-h-[calc(75svh-2.625rem)]');
-    expect(video).toHaveClass('h-[100svh]');
+    expect(video).not.toHaveClass('h-[100svh]');
+    expect(video).toHaveClass('h-full');
     expect(video).toHaveClass('w-full');
     expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('hero-song');
   });

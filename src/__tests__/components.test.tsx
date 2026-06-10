@@ -270,6 +270,20 @@ describe('modal, icons and video hero', () => {
     expect(screen.getByAltText('Fallback cover')).toBeInTheDocument();
   });
 
+  it('sizes default video background layers to the hero box', () => {
+    render(
+      <VideoHero videoSrc="/hero.mp4" label="Sized hero" allowOverflow>
+        <h1>Chart controls</h1>
+      </VideoHero>,
+    );
+
+    const section = screen.getByLabelText('Sized hero');
+    const video = section.querySelector('video');
+
+    expect(section).toHaveClass('overflow-visible');
+    expect(video).toHaveClass('absolute', 'inset-0', 'h-full', 'w-full', 'object-cover');
+  });
+
   it('applies the bottom fade to every video hero by default', () => {
     render(
       <VideoHero label="Fallback hero">

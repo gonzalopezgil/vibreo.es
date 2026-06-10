@@ -51,7 +51,7 @@ export function VideoHero({
   children,
   fallbackMedia,
   className = '',
-  backgroundLayerClassName = 'absolute inset-0',
+  backgroundLayerClassName = 'absolute inset-0 h-full w-full',
   allowOverflow = false,
   label,
 }: VideoHeroProps) {
