@@ -81,6 +81,7 @@ function revalidateSeconds(path: string): number {
 
 function cdnCacheControl(path: string, status: number): string {
   if (status >= 400) return 'no-store';
+  if (path === '/latest') return 'no-store';
   const ttl = revalidateSeconds(path);
   return `public, max-age=${ttl}, stale-while-revalidate=${Math.min(ttl, 300)}`;
 }
@@ -110,11 +111,18 @@ export async function GET(
     return NextResponse.json({ error: 'not_found' }, { status: 404, headers: corsHeaders(request) });
   }
 
-  const res = await fetch(url, {
-    headers: upstreamHeaders(request),
-    cache: 'force-cache',
-    next: { revalidate: revalidateSeconds(apiPath) },
-  });
+  const fetchOptions: RequestInit & { next?: { revalidate: number } } = apiPath === '/latest'
+    ? {
+        headers: upstreamHeaders(request),
+        cache: 'no-store',
+      }
+    : {
+        headers: upstreamHeaders(request),
+        cache: 'force-cache',
+        next: { revalidate: revalidateSeconds(apiPath) },
+      };
+
+  const res = await fetch(url, fetchOptions);
 
   return new NextResponse(res.body, {
     status: res.status,

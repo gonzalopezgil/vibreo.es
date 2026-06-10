@@ -69,6 +69,33 @@ describe('api proxy route', () => {
     expect(response.status).toBe(200);
   });
 
+  it('does not cache latest metadata through the proxy', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ songs_daily: '2026-06-09' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const response = await GET(
+      new NextRequest('https://vibreo.es/api-proxy/latest', {
+        headers: { Origin: 'https://vibreo.es' },
+      }),
+      { params: Promise.resolve({ path: ['latest'] }) },
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith('https://api.vibreo.es/latest', {
+      cache: 'no-store',
+      headers: {
+        Origin: 'https://vibreo.es',
+        'X-Vibreo-Client-IP': 'unknown',
+      },
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('CDN-Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('no-store');
+  });
+
   it('forwards one artist listener record through the proxy', async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {
