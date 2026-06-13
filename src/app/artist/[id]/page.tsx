@@ -17,12 +17,22 @@ interface ArtistEntity {
   artist_uri: string;
   artist_name: string;
   image_url: string;
+  spotify_global_200_number_one_hits?: SpotifyGlobal200NumberOneHit[];
   monthly_listeners?: number;
   monthly_listeners_daily_change?: number;
   monthly_listeners_rank?: number;
   monthly_listeners_previous_rank?: number | null;
   monthly_listeners_peak_rank?: number;
   monthly_listeners_peak_listeners?: number;
+}
+
+interface SpotifyGlobal200NumberOneHit {
+  track_uri: string;
+  track_name: string;
+  image_url: string;
+  first_date: string;
+  last_date: string;
+  days_at_number_one: number;
 }
 
 interface ChartingSong {
@@ -126,6 +136,16 @@ function formatOptionalStreams(streams?: number | null) {
   return typeof streams === 'number' ? formatStreams(streams) : '—';
 }
 
+function formatDate(dateStr: string) {
+  if (!dateStr) return '—';
+  const date = new Date(`${dateStr}T00:00:00`);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatNumberOneDays(days: number) {
+  return `${days} ${days === 1 ? 'day' : 'days'} at #1`;
+}
+
 function getPeakLabelClass(isAtPeak: boolean) {
   return `text-[11px] font-normal ${isAtPeak ? 'text-amber-300' : 'text-zinc-500'}`;
 }
@@ -214,6 +234,73 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
           </span>
         </MonthlyListenerDetailRow>
       </div>
+    </section>
+  );
+}
+
+function GlobalNumberOneHitsPanel({ hits }: { hits?: SpotifyGlobal200NumberOneHit[] }) {
+  if (!Array.isArray(hits)) return null;
+
+  const sortedHits = [...hits].sort((a, b) =>
+    b.last_date.localeCompare(a.last_date) ||
+    b.first_date.localeCompare(a.first_date) ||
+    a.track_name.localeCompare(b.track_name) ||
+    a.track_uri.localeCompare(b.track_uri)
+  );
+
+  return (
+    <section
+      data-testid="global-number-one-hits-panel"
+      className="overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/50"
+    >
+      <div className="grid grid-cols-2 gap-2 border-b border-zinc-800/60 p-3">
+        <div className="rounded-xl border border-green-500/15 bg-green-500/10 px-3 py-3">
+          <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-300">
+            <SpotifyIcon size={15} />
+            Spotify
+          </p>
+          <p className="mt-1 text-sm font-bold text-zinc-100">Global 200</p>
+        </div>
+        <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/45 px-3 py-3 text-right">
+          <p className="tabular-nums text-2xl font-extrabold leading-none text-zinc-100">{sortedHits.length}</p>
+          <p className="mt-1 text-xs font-semibold text-zinc-400">#1 Hits</p>
+        </div>
+      </div>
+
+      {sortedHits.length > 0 ? (
+        <div className="divide-y divide-zinc-800/40">
+          {sortedHits.map((hit) => {
+            const trackId = extractId(hit.track_uri);
+            return (
+              <Link
+                key={hit.track_uri}
+                href={`/song/${trackId}`}
+                className="flex items-center gap-3 px-4 py-3 transition hover:bg-zinc-800/40"
+              >
+                {hit.image_url ? (
+                  <Image src={hit.image_url} alt={hit.track_name} width={40} height={40} className="shrink-0 rounded" />
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-zinc-800">
+                    <Music size={16} className="text-zinc-600" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-zinc-100">{hit.track_name}</p>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-500">
+                    <span>Last #1 {formatDate(hit.last_date)}</span>
+                    <span>{formatNumberOneDays(hit.days_at_number_one)}</span>
+                  </p>
+                </div>
+                <ChevronRight size={15} className="shrink-0 text-zinc-600" />
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="px-4 py-5 text-center text-sm text-zinc-500">
+          No Global 200 #1 hits yet.
+        </div>
+      )}
     </section>
   );
 }
@@ -490,6 +577,7 @@ export default function ArtistPage() {
 
       <div className="mx-auto max-w-2xl px-4 space-y-8">
         <MonthlyListenersPanel artist={artist} />
+        <GlobalNumberOneHitsPanel hits={artist.spotify_global_200_number_one_hits} />
 
         {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-zinc-800/50 p-1">

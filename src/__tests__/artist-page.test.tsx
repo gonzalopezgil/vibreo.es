@@ -257,6 +257,56 @@ describe('ArtistPage', () => {
     expect(screen.queryByText('Chart rank')).not.toBeInTheDocument();
   });
 
+  it('renders Spotify Global 200 number one hits from newest to oldest', async () => {
+    mockedGetArtist.mockResolvedValue({
+      artist_uri: 'spotify:artist:ariana',
+      artist_name: 'Ariana Grande',
+      image_url: 'https://i.scdn.co/image/ariana.jpg',
+      spotify_global_200_number_one_hits: [
+        {
+          track_uri: 'spotify:track:we-cant',
+          track_name: "we can't be friends",
+          image_url: 'https://i.scdn.co/image/we-cant.jpg',
+          first_date: '2024-03-08',
+          last_date: '2024-03-15',
+          days_at_number_one: 8,
+        },
+        {
+          track_uri: 'spotify:track:yes-and',
+          track_name: 'yes, and?',
+          image_url: 'https://i.scdn.co/image/yes-and.jpg',
+          first_date: '2024-01-12',
+          last_date: '2024-01-18',
+          days_at_number_one: 7,
+        },
+      ],
+    });
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [],
+        positions: [],
+      },
+    });
+
+    render(<ArtistPage />);
+
+    const panel = await screen.findByTestId('global-number-one-hits-panel');
+
+    expect(within(panel).getByText('Spotify')).toBeInTheDocument();
+    expect(within(panel).getByText('Global 200')).toBeInTheDocument();
+    expect(within(panel).getByText('#1 Hits')).toBeInTheDocument();
+    expect(within(panel).getByText('2')).toBeInTheDocument();
+    expect(within(panel).getByText("we can't be friends")).toBeInTheDocument();
+    expect(within(panel).getByText('yes, and?')).toBeInTheDocument();
+    expect(within(panel).getByText('Last #1 Mar 15, 2024')).toBeInTheDocument();
+    expect(within(panel).getByText('8 days at #1')).toBeInTheDocument();
+    expect(within(panel).getByRole('link', { name: /we can't be friends/i })).toHaveAttribute('href', '/song/we-cant');
+
+    const links = within(panel).getAllByRole('link');
+    expect(links[0]).toHaveAttribute('href', '/song/we-cant');
+    expect(links[1]).toHaveAttribute('href', '/song/yes-and');
+  });
+
   it('highlights peak labels when current listener metrics match their peaks', async () => {
     mockedGetChartingArtists.mockResolvedValue({
       'spotify:artist:ariana': {
