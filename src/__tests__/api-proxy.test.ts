@@ -96,6 +96,37 @@ describe('api proxy route', () => {
     expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('no-store');
   });
 
+  it.each([
+    ['artist entity', ['artists', 'artist1'], 'https://api.vibreo.es/artists/artist1'],
+    ['song entity', ['songs', 'song1'], 'https://api.vibreo.es/songs/song1'],
+    ['album entity', ['albums', 'album1'], 'https://api.vibreo.es/albums/album1'],
+  ])('does not cache %s responses through the proxy', async (_label, path, expectedUrl) => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const response = await GET(
+      new NextRequest(`https://vibreo.es/api-proxy/${path.join('/')}`, {
+        headers: { Origin: 'https://vibreo.es' },
+      }),
+      { params: Promise.resolve({ path }) },
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(expectedUrl, {
+      cache: 'no-store',
+      headers: {
+        Origin: 'https://vibreo.es',
+        'X-Vibreo-Client-IP': 'unknown',
+      },
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('CDN-Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('no-store');
+  });
+
   it('forwards one artist listener record through the proxy', async () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {
