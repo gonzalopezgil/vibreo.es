@@ -18,6 +18,8 @@ interface ArtistEntity {
   artist_name: string;
   image_url: string;
   spotify_global_200_number_one_hits?: SpotifyGlobal200NumberOneHit[];
+  spotify_global_200_top_10_hits?: SpotifyGlobal200Top10Hit[];
+  spotify_global_200_top_200_hits?: SpotifyGlobal200Top200Hit[];
   monthly_listeners?: number;
   monthly_listeners_daily_change?: number;
   monthly_listeners_rank?: number;
@@ -34,6 +36,40 @@ interface SpotifyGlobal200NumberOneHit {
   last_date: string;
   days_at_number_one: number;
 }
+
+interface SpotifyGlobal200Top10Hit {
+  track_uri: string;
+  track_name: string;
+  image_url: string;
+  peak_rank: number;
+  first_date: string;
+  last_date: string;
+  days_in_top_10: number;
+}
+
+interface SpotifyGlobal200Top200Hit {
+  track_uri: string;
+  track_name: string;
+  image_url: string;
+  peak_rank: number;
+  first_date: string;
+  last_date: string;
+  days_on_chart: number;
+}
+
+type SpotifyGlobal200PanelMode = 'number-one' | 'top-10' | 'top-200';
+
+type SpotifyGlobal200PanelHit = {
+  track_uri: string;
+  track_name: string;
+  image_url: string;
+  first_date: string;
+  last_date: string;
+  peak_rank?: number;
+  days_at_number_one?: number;
+  days_in_top_10?: number;
+  days_on_chart?: number;
+};
 
 interface ChartingSong {
   track_uri: string;
@@ -146,6 +182,14 @@ function formatNumberOneDays(days: number) {
   return `${days} ${days === 1 ? 'day' : 'days'} at #1`;
 }
 
+function formatTop10Days(days: number) {
+  return `${days} ${days === 1 ? 'day' : 'days'} in Top 10`;
+}
+
+function formatGlobal200ChartDays(days: number) {
+  return `${days} ${days === 1 ? 'day' : 'days'} on Global 200`;
+}
+
 function getPeakLabelClass(isAtPeak: boolean) {
   return `text-[11px] font-normal ${isAtPeak ? 'text-amber-300' : 'text-zinc-500'}`;
 }
@@ -238,22 +282,85 @@ function MonthlyListenersPanel({ artist }: { artist: ArtistEntity }) {
   );
 }
 
-function GlobalNumberOneHitsPanel({ hits }: { hits?: SpotifyGlobal200NumberOneHit[] }) {
-  if (!Array.isArray(hits)) return null;
-
-  const sortedHits = [...hits].sort((a, b) =>
+function sortSpotifyGlobal200PanelHits<T extends SpotifyGlobal200PanelHit>(hits: T[]): T[] {
+  return [...hits].sort((a, b) =>
     b.last_date.localeCompare(a.last_date) ||
     b.first_date.localeCompare(a.first_date) ||
     a.track_name.localeCompare(b.track_name) ||
     a.track_uri.localeCompare(b.track_uri)
   );
+}
+
+function getSpotifyGlobal200HitMeta(mode: SpotifyGlobal200PanelMode, hit: SpotifyGlobal200PanelHit) {
+  if (mode === 'number-one') {
+    return [`Last #1 ${formatDate(hit.last_date)}`, formatNumberOneDays(hit.days_at_number_one || 0)];
+  }
+  if (mode === 'top-10') {
+    return [`Peak #${hit.peak_rank || '—'}`, formatTop10Days(hit.days_in_top_10 || 0)];
+  }
+  return [`Peak #${hit.peak_rank || '—'}`, formatGlobal200ChartDays(hit.days_on_chart || 0)];
+}
+
+function getSpotifyGlobal200EmptyLabel(mode: SpotifyGlobal200PanelMode) {
+  if (mode === 'number-one') return 'No Global 200 #1 hits yet.';
+  if (mode === 'top-10') return 'No Global 200 Top 10 hits yet.';
+  return 'No Global 200 Top 200 hits yet.';
+}
+
+function Global200ModeButton({
+  active,
+  count,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  count: number;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`rounded-xl border px-3 py-3 text-right transition ${
+        active
+          ? 'border-green-400/40 bg-green-500/15 text-zinc-100'
+          : 'border-zinc-800/60 bg-zinc-950/45 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/70 hover:text-zinc-100'
+      }`}
+    >
+      <p className="tabular-nums text-2xl font-extrabold leading-none">{count}</p>
+      <p className={`mt-1 text-xs font-semibold ${active ? 'text-green-300' : 'text-zinc-400'}`}>{label}</p>
+    </button>
+  );
+}
+
+function GlobalNumberOneHitsPanel({
+  numberOneHits,
+  top10Hits,
+  top200Hits,
+}: {
+  numberOneHits?: SpotifyGlobal200NumberOneHit[];
+  top10Hits?: SpotifyGlobal200Top10Hit[];
+  top200Hits?: SpotifyGlobal200Top200Hit[];
+}) {
+  const [activeMode, setActiveMode] = useState<SpotifyGlobal200PanelMode>('number-one');
+  const sortedNumberOneHits = sortSpotifyGlobal200PanelHits(Array.isArray(numberOneHits) ? numberOneHits : []);
+  const sortedTop10Hits = sortSpotifyGlobal200PanelHits(Array.isArray(top10Hits) ? top10Hits : []);
+  const sortedTop200Hits = sortSpotifyGlobal200PanelHits(Array.isArray(top200Hits) ? top200Hits : []);
+  const modeHits: Record<SpotifyGlobal200PanelMode, SpotifyGlobal200PanelHit[]> = {
+    'number-one': sortedNumberOneHits,
+    'top-10': sortedTop10Hits,
+    'top-200': sortedTop200Hits,
+  };
+  const selectedHits = modeHits[activeMode];
 
   return (
     <section
       data-testid="global-number-one-hits-panel"
       className="overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900/50"
     >
-      <div className="grid grid-cols-2 gap-2 border-b border-zinc-800/60 p-3">
+      <div className="grid grid-cols-2 gap-2 border-b border-zinc-800/60 p-3 sm:grid-cols-4">
         <div className="rounded-xl border border-green-500/15 bg-green-500/10 px-3 py-3">
           <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-300">
             <SpotifyIcon size={15} />
@@ -261,16 +368,31 @@ function GlobalNumberOneHitsPanel({ hits }: { hits?: SpotifyGlobal200NumberOneHi
           </p>
           <p className="mt-1 text-sm font-bold text-zinc-100">Global 200</p>
         </div>
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-950/45 px-3 py-3 text-right">
-          <p className="tabular-nums text-2xl font-extrabold leading-none text-zinc-100">{sortedHits.length}</p>
-          <p className="mt-1 text-xs font-semibold text-zinc-400">#1 Hits</p>
-        </div>
+        <Global200ModeButton
+          active={activeMode === 'number-one'}
+          count={sortedNumberOneHits.length}
+          label="#1 Hits"
+          onClick={() => setActiveMode('number-one')}
+        />
+        <Global200ModeButton
+          active={activeMode === 'top-10'}
+          count={sortedTop10Hits.length}
+          label="Top 10 Hits"
+          onClick={() => setActiveMode('top-10')}
+        />
+        <Global200ModeButton
+          active={activeMode === 'top-200'}
+          count={sortedTop200Hits.length}
+          label="Top 200 Hits"
+          onClick={() => setActiveMode('top-200')}
+        />
       </div>
 
-      {sortedHits.length > 0 ? (
+      {selectedHits.length > 0 ? (
         <div className="divide-y divide-zinc-800/40">
-          {sortedHits.map((hit) => {
+          {selectedHits.map((hit) => {
             const trackId = extractId(hit.track_uri);
+            const [primaryMeta, secondaryMeta] = getSpotifyGlobal200HitMeta(activeMode, hit);
             return (
               <Link
                 key={hit.track_uri}
@@ -287,8 +409,8 @@ function GlobalNumberOneHitsPanel({ hits }: { hits?: SpotifyGlobal200NumberOneHi
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-zinc-100">{hit.track_name}</p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-500">
-                    <span>Last #1 {formatDate(hit.last_date)}</span>
-                    <span>{formatNumberOneDays(hit.days_at_number_one)}</span>
+                    <span>{primaryMeta}</span>
+                    <span>{secondaryMeta}</span>
                   </p>
                 </div>
                 <ChevronRight size={15} className="shrink-0 text-zinc-600" />
@@ -298,7 +420,7 @@ function GlobalNumberOneHitsPanel({ hits }: { hits?: SpotifyGlobal200NumberOneHi
         </div>
       ) : (
         <div className="px-4 py-5 text-center text-sm text-zinc-500">
-          No Global 200 #1 hits yet.
+          {getSpotifyGlobal200EmptyLabel(activeMode)}
         </div>
       )}
     </section>
@@ -577,7 +699,11 @@ export default function ArtistPage() {
 
       <div className="mx-auto max-w-2xl px-4 space-y-8">
         <MonthlyListenersPanel artist={artist} />
-        <GlobalNumberOneHitsPanel hits={artist.spotify_global_200_number_one_hits} />
+        <GlobalNumberOneHitsPanel
+          numberOneHits={artist.spotify_global_200_number_one_hits}
+          top10Hits={artist.spotify_global_200_top_10_hits}
+          top200Hits={artist.spotify_global_200_top_200_hits}
+        />
 
         {/* Tabs */}
         <div className="flex gap-1 rounded-xl bg-zinc-800/50 p-1">

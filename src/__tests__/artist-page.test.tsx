@@ -1,5 +1,5 @@
 import type React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import ArtistPage from '@/app/artist/[id]/page';
 import {
   getArtist,
@@ -305,6 +305,113 @@ describe('ArtistPage', () => {
     const links = within(panel).getAllByRole('link');
     expect(links[0]).toHaveAttribute('href', '/song/we-cant');
     expect(links[1]).toHaveAttribute('href', '/song/yes-and');
+  });
+
+  it('switches the Spotify Global 200 panel between #1, Top 10, and Top 200 hits', async () => {
+    mockedGetArtist.mockResolvedValue({
+      artist_uri: 'spotify:artist:ariana',
+      artist_name: 'Ariana Grande',
+      image_url: 'https://i.scdn.co/image/ariana.jpg',
+      spotify_global_200_number_one_hits: [
+        {
+          track_uri: 'spotify:track:we-cant',
+          track_name: "we can't be friends",
+          image_url: 'https://i.scdn.co/image/we-cant.jpg',
+          first_date: '2024-03-08',
+          last_date: '2024-03-15',
+          days_at_number_one: 8,
+        },
+      ],
+      spotify_global_200_top_10_hits: [
+        {
+          track_uri: 'spotify:track:we-cant',
+          track_name: "we can't be friends",
+          image_url: 'https://i.scdn.co/image/we-cant.jpg',
+          peak_rank: 1,
+          first_date: '2024-03-08',
+          last_date: '2024-03-20',
+          days_in_top_10: 13,
+        },
+        {
+          track_uri: 'spotify:track:positions',
+          track_name: 'positions',
+          image_url: 'https://i.scdn.co/image/positions.jpg',
+          peak_rank: 7,
+          first_date: '2020-10-30',
+          last_date: '2020-11-05',
+          days_in_top_10: 7,
+        },
+      ],
+      spotify_global_200_top_200_hits: [
+        {
+          track_uri: 'spotify:track:we-cant',
+          track_name: "we can't be friends",
+          image_url: 'https://i.scdn.co/image/we-cant.jpg',
+          peak_rank: 1,
+          first_date: '2024-03-08',
+          last_date: '2024-04-15',
+          days_on_chart: 39,
+        },
+        {
+          track_uri: 'spotify:track:positions',
+          track_name: 'positions',
+          image_url: 'https://i.scdn.co/image/positions.jpg',
+          peak_rank: 7,
+          first_date: '2020-10-30',
+          last_date: '2021-01-15',
+          days_on_chart: 78,
+        },
+        {
+          track_uri: 'spotify:track:ordinary-things',
+          track_name: 'ordinary things',
+          image_url: 'https://i.scdn.co/image/ordinary-things.jpg',
+          peak_rank: 98,
+          first_date: '2024-03-08',
+          last_date: '2024-03-22',
+          days_on_chart: 15,
+        },
+      ],
+    });
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [],
+        positions: [],
+      },
+    });
+
+    render(<ArtistPage />);
+
+    const panel = await screen.findByTestId('global-number-one-hits-panel');
+    const numberOneButton = within(panel).getByRole('button', { name: /#1 Hits/i });
+    const topTenButton = within(panel).getByRole('button', { name: /Top 10 Hits/i });
+    const topTwoHundredButton = within(panel).getByRole('button', { name: /Top 200 Hits/i });
+
+    expect(numberOneButton).toHaveAttribute('aria-pressed', 'true');
+    expect(topTenButton).toHaveAttribute('aria-pressed', 'false');
+    expect(topTwoHundredButton).toHaveAttribute('aria-pressed', 'false');
+    expect(within(numberOneButton).getByText('1')).toBeInTheDocument();
+    expect(within(panel).getByText("we can't be friends")).toBeInTheDocument();
+    expect(within(panel).getByText('Last #1 Mar 15, 2024')).toBeInTheDocument();
+    expect(within(panel).getByText('8 days at #1')).toBeInTheDocument();
+    expect(within(panel).queryByText('positions')).not.toBeInTheDocument();
+
+    fireEvent.click(topTenButton);
+
+    expect(topTenButton).toHaveAttribute('aria-pressed', 'true');
+    expect(within(topTenButton).getByText('2')).toBeInTheDocument();
+    expect(within(panel).getByText("we can't be friends")).toBeInTheDocument();
+    expect(within(panel).getByText('positions')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak #7')).toBeInTheDocument();
+    expect(within(panel).getByText('7 days in Top 10')).toBeInTheDocument();
+    expect(within(panel).queryByText('ordinary things')).not.toBeInTheDocument();
+
+    fireEvent.click(topTwoHundredButton);
+
+    expect(topTwoHundredButton).toHaveAttribute('aria-pressed', 'true');
+    expect(within(topTwoHundredButton).getByText('3')).toBeInTheDocument();
+    expect(within(panel).getByText('ordinary things')).toBeInTheDocument();
+    expect(within(panel).getByText('Peak #98')).toBeInTheDocument();
+    expect(within(panel).getByText('15 days on Global 200')).toBeInTheDocument();
   });
 
   it('highlights peak labels when current listener metrics match their peaks', async () => {
