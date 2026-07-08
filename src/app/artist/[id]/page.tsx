@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Music, User, Disc } from 'lucide-react';
 import { SpotifyIcon, YouTubeMusicIcon } from '@/components/PlatformIcons';
 import { ImageModal } from '@/components/ImageModal';
 import { VideoHero } from '@/components/VideoHero';
-import { getArtist, getArtistListener, getChartingArtist, getChartingAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
+import { getArtist, getArtistListener, getChartingArtist, getChartingArtistAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
 import { FlagIcon } from '@/components/FlagIcon';
 import { getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
@@ -103,14 +103,6 @@ interface ChartingSongPosition {
   rank: number;
   streams: number;
 }
-
-type ChartingAlbumData = {
-  album_name?: string;
-  artist_names?: string;
-  artist_uris?: string;
-  image_url?: string;
-  positions?: ChartingAlbumEntry['positions'];
-};
 
 type ListenerChartingData = {
   artist_uri: string;
@@ -477,13 +469,12 @@ export default function ArtistPage() {
         const [artistData, chartingData, albumChartingData, listenerData, channelsData] = await Promise.all([
           getArtist<ArtistEntity>(id),
           getChartingArtist<ChartingArtistData>(id).catch(() => null as ChartingArtistData | null),
-          getChartingAlbums<Record<string, ChartingAlbumData | ChartingAlbumEntry['positions']>>(),
+          getChartingArtistAlbums<ChartingAlbumEntry[]>(id).catch(() => [] as ChartingAlbumEntry[]),
           getArtistListener(id).catch(() => null as ListenerChartingData | null),
           getArtistChannels().catch(() => ({} as Record<string, string>)),
         ]);
         if (cancelled) return;
 
-        const uri = `spotify:artist:${id}`;
         setArtist({
           ...artistData,
           monthly_listeners: listenerData?.listeners ?? artistData.monthly_listeners,
@@ -509,26 +500,7 @@ export default function ArtistPage() {
           setArtistPositions(sorted);
         }
 
-        // Albums — find albums where any artist_uri matches
-        const matchingAlbums: ChartingAlbumEntry[] = [];
-        for (const [albumUri, albumData] of Object.entries(albumChartingData)) {
-          if (Array.isArray(albumData)) continue;
-          // albumData can be an array of positions or an object with metadata
-          // Check if it has artist_uris that match
-          const artistUris = albumData.artist_uris || '';
-          const uriList = artistUris.split('|').map((u) => u.trim());
-          if (uriList.includes(uri)) {
-            matchingAlbums.push({
-              album_uri: albumUri,
-              album_name: albumData.album_name || '',
-              artist_names: albumData.artist_names || '',
-              artist_uris: artistUris,
-              image_url: albumData.image_url || '',
-              positions: albumData.positions || [],
-            });
-          }
-        }
-        // Sort by best rank across all positions
+        const matchingAlbums = [...albumChartingData];
         matchingAlbums.sort((a, b) => {
           const aBest = Array.isArray(a.positions) ? Math.min(...a.positions.map(p => p.rank)) : 999;
           const bBest = Array.isArray(b.positions) ? Math.min(...b.positions.map(p => p.rank)) : 999;

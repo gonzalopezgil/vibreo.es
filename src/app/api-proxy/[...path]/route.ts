@@ -8,6 +8,7 @@ const ALLOWED_API_PATHS = [
   /^\/search$/,
   /^\/charting\/(?:songs|artists|albums|listeners|market-streams|youtube-links|artist-channels)$/,
   /^\/charting\/artists\/[a-z0-9]+$/i,
+  /^\/charting\/albums\/[a-z0-9]+$/i,
   /^\/charting\/listeners\/[a-z0-9]+$/i,
   /^\/charts\/(?:songs\/daily|artists\/daily|albums\/weekly)\/[a-z0-9-]+\/(?:latest|\d{4}-\d{2}-\d{2})$/i,
   /^\/(?:songs|artists|albums)\/[a-z0-9]+$/i,

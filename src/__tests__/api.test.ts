@@ -117,6 +117,11 @@ describe('api', () => {
     ['getChartingArtists', (api) => api.getChartingArtists(), '/charting/artists'],
     ['getChartingArtist', (api) => api.getChartingArtist('artist1'), '/charting/artists/artist1'],
     ['getChartingAlbums', (api) => api.getChartingAlbums(), '/charting/albums'],
+    [
+      'getChartingArtistAlbums',
+      (api) => (api as ApiModule & { getChartingArtistAlbums: (id: string) => Promise<unknown> }).getChartingArtistAlbums('artist1'),
+      '/charting/albums/artist1',
+    ],
     ['getChartingListeners', (api) => api.getChartingListeners(), '/charting/listeners'],
     ['getArtistListener', (api) => api.getArtistListener('artist1'), '/charting/listeners/artist1'],
     ['getChartingListenersPage', (api) => api.getChartingListenersPage({ limit: 50, offset: 100 }), '/charting/listeners?limit=50&offset=100'],

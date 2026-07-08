@@ -52,6 +52,7 @@ jest.mock('@/lib/api', () => ({
   getArtistChannels: jest.fn(),
   getArtistListener: jest.fn(),
   getChartingAlbums: jest.fn(),
+  getChartingArtistAlbums: jest.fn(),
   getChartingArtist: jest.fn(),
   getChartingArtists: jest.fn(),
   getChartingListeners: jest.fn(),
@@ -68,6 +69,7 @@ const mockedGetChartingArtist = jest.mocked(getChartingArtist);
 const mockedGetChartingArtists = jest.mocked(getChartingArtists);
 const mockedGetChartingListeners = jest.mocked(getChartingListeners);
 const mockedGetChartingAlbums = jest.mocked(getChartingAlbums);
+const mockedGetChartingArtistAlbums = jest.mocked(jest.requireMock('@/lib/api').getChartingArtistAlbums);
 const mockedGetArtistChannels = jest.mocked(getArtistChannels);
 const mockedGetYouTubeLinks = jest.mocked(getYouTubeLinks);
 const mockedGetHeroVideoUrl = jest.mocked(getHeroVideoUrl);
@@ -118,6 +120,7 @@ describe('ArtistPage', () => {
       peak_listeners: 126_970_279,
     });
     mockedGetChartingAlbums.mockResolvedValue({});
+    mockedGetChartingArtistAlbums.mockResolvedValue([]);
     mockedGetChartingArtist.mockResolvedValue({ songs: [], positions: [] });
     mockedGetChartingArtists.mockResolvedValue({});
     mockedGetChartingListeners.mockResolvedValue({});
@@ -548,5 +551,38 @@ describe('ArtistPage', () => {
     expect(await screen.findByText('scoped song')).toBeInTheDocument();
     expect(mockedGetChartingArtist).toHaveBeenCalledWith('ariana');
     expect(mockedGetChartingArtists).not.toHaveBeenCalled();
+  });
+
+  it('requests only this artist album charting records instead of the full album charting map', async () => {
+    mockChartingArtistFromMap({
+      'spotify:artist:ariana': {
+        songs: [],
+        positions: [],
+      },
+    });
+    mockedGetChartingArtistAlbums.mockResolvedValue([
+      {
+        album_uri: 'spotify:album:scoped-album',
+        album_name: 'scoped album',
+        artist_names: 'Ariana Grande',
+        artist_uris: 'spotify:artist:ariana',
+        image_url: 'https://i.scdn.co/image/scoped-album.jpg',
+        positions: [{ country: 'global', rank: 4, weeks_on_chart: 3 }],
+      },
+    ]);
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Ariana Grande' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Albums/i }));
+
+    expect(await screen.findByText('scoped album')).toBeInTheDocument();
+    const albumLink = screen.getByRole('link', { name: /scoped album/i });
+    expect(within(albumLink).getByText(/1 market/)).toBeInTheDocument();
+    expect(within(albumLink).getByText(/Best #4/)).toBeInTheDocument();
+    expect(within(albumLink).getByText(/3 weeks/)).toBeInTheDocument();
+    expect(mockedGetChartingArtistAlbums).toHaveBeenCalledWith('ariana');
+    expect(mockedGetChartingAlbums).not.toHaveBeenCalled();
   });
 });
