@@ -146,6 +146,44 @@ describe('ChartTypeDatePage', () => {
     expect(heroContent).not.toHaveClass('pb-8');
   });
 
+  it('renders song rows before YouTube links finish loading', async () => {
+    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+
+    render(<ChartTypeDatePage />);
+
+    expect(await screen.findAllByText('hate that i made you love me', {}, { timeout: 1000 })).toHaveLength(2);
+    expect(screen.getByText('6.3M')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Filter by song or artist')).not.toBeDisabled();
+  });
+
+  it('renders artist rows before hero video dependencies finish loading', async () => {
+    mockParams = { country: 'global', type: 'artists', date: 'latest' };
+    mockedGetChartArtistsDaily.mockResolvedValue([
+      {
+        rank: 1,
+        uri: 'spotify:artist:ariana',
+        artist_name: 'Ariana Grande',
+        image_url: 'https://i.scdn.co/image/ariana.jpg',
+        peak_rank: 1,
+        previous_rank: 2,
+        days_on_chart: 100,
+        consecutive_days: 20,
+        entry_status: 'STANDARD',
+        peak_date: '2026-06-04',
+        entry_rank: 4,
+        entry_date: '2026-01-01',
+      },
+    ]);
+    mockedGetChartingArtists.mockReturnValue(new Promise<Awaited<ReturnType<typeof getChartingArtists>>>(() => {}));
+    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+
+    render(<ChartTypeDatePage />);
+
+    expect(await screen.findAllByText('Ariana Grande', {}, { timeout: 1000 })).toHaveLength(2);
+    expect(screen.getByText('#1 right now')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Filter by artist')).not.toBeDisabled();
+  });
+
   it('reserves the #1 highlight slot while chart data is loading', () => {
     mockedGetLatest.mockReturnValue(new Promise(() => {}));
 

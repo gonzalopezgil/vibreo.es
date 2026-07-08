@@ -135,6 +135,29 @@ describe('ArtistPage', () => {
     expectHeroBottomFade(heading.closest('section'));
   });
 
+  it('renders artist details before YouTube links finish loading', async () => {
+    mockedGetChartingArtists.mockResolvedValue({
+      'spotify:artist:ariana': {
+        songs: [
+          {
+            track_uri: 'spotify:track:hate-that',
+            track_name: 'hate that i made you love me',
+            image_url: 'https://i.scdn.co/image/hate-that.jpg',
+            positions: [{ country: 'global', rank: 2, streams: 5_452_802 }],
+          },
+        ],
+        positions: [],
+      },
+    });
+    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByRole('heading', { name: 'Ariana Grande' }, { timeout: 1000 })).toBeInTheDocument();
+    expect(screen.getByText('Spotify monthly listeners')).toBeInTheDocument();
+    expect(screen.getByText('hate that i made you love me')).toBeInTheDocument();
+  });
+
   it('uses the global rank for globally charting songs', async () => {
     mockedGetChartingArtists.mockResolvedValue({
       'spotify:artist:ariana': {

@@ -178,6 +178,37 @@ describe('ListenerChartPage', () => {
     expect(mockedGetChartingListenersPage).toHaveBeenNthCalledWith(2, { limit: 100, offset: 100 });
   });
 
+  it('renders listener rows before hero video dependencies finish loading', async () => {
+    mockedGetChartingListenersPage.mockResolvedValueOnce({
+      items: [
+        {
+          artist_uri: 'spotify:artist:alpha',
+          artist_id: 'alpha',
+          artist_name: 'Alpha Artist',
+          image_url: 'https://i.scdn.co/image/alpha.jpg',
+          rank: 1,
+          previous_rank: 3,
+          listeners: 100_000_000,
+          daily_change: 10_000,
+          peak_rank: 1,
+          peak_listeners: 105_000_000,
+        },
+      ],
+      limit: 100,
+      nextOffset: null,
+      offset: 0,
+      total: 1,
+    });
+    mockedGetChartingArtists.mockReturnValue(new Promise<Awaited<ReturnType<typeof getChartingArtists>>>(() => {}));
+    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+
+    render(<ListenerChartPage />);
+
+    const table = await screen.findByTestId('listener-chart-table', {}, { timeout: 1000 });
+    expect(await within(table).findByText('Alpha Artist', {}, { timeout: 1000 })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search artists')).not.toBeDisabled();
+  });
+
   it('highlights listener values and uses a plain peak label when artists are at their listener peaks', async () => {
     mockedGetChartingListenersPage.mockResolvedValueOnce({
       items: [

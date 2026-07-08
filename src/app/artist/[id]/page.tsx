@@ -470,16 +470,16 @@ export default function ArtistPage() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    setYtLinksMap({});
 
     async function load() {
       try {
-        const [artistData, chartingData, albumChartingData, listenerData, channelsData, ytData] = await Promise.all([
+        const [artistData, chartingData, albumChartingData, listenerData, channelsData] = await Promise.all([
           getArtist<ArtistEntity>(id),
           getChartingArtists<Record<string, ChartingArtistData>>(),
           getChartingAlbums<Record<string, ChartingAlbumData | ChartingAlbumEntry['positions']>>(),
           getArtistListener(id).catch(() => null as ListenerChartingData | null),
           getArtistChannels().catch(() => ({} as Record<string, string>)),
-          getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
         ]);
         if (cancelled) return;
 
@@ -536,8 +536,6 @@ export default function ArtistPage() {
         });
         setArtistAlbums(matchingAlbums);
 
-        setYtLinksMap(ytData);
-
         // Find YouTube channel
         const artistName = artistData.artist_name?.toLowerCase() || '';
         for (const [channelId, name] of Object.entries(channelsData)) {
@@ -546,6 +544,12 @@ export default function ArtistPage() {
             break;
           }
         }
+
+        void getYouTubeLinks()
+          .then((ytData) => {
+            if (!cancelled) setYtLinksMap(ytData);
+          })
+          .catch(() => {});
       } catch (err: unknown) {
         if (!cancelled) setError(getErrorMessage(err, 'Failed to load artist'));
       } finally {

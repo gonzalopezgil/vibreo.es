@@ -105,24 +105,34 @@ export default function Home() {
   const [ytLinksMap, setYtLinksMap] = useState<Record<string, { m?: string; v?: string; vt?: string }>>({});
 
   useEffect(() => {
+    let cancelled = false;
+
     async function load() {
       try {
-        const [latest, data, ytData] = await Promise.all([
+        const [latest, data] = await Promise.all([
           getLatest(),
           getChartSongsDaily('global', 'latest'),
-          getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
         ]);
+        if (cancelled) return;
         setChartDate(latest.songs_daily);
         if (latest.updated_at) setUpdatedAt(latest.updated_at);
         setAllSongs(data);
-        setYtLinksMap(ytData);
+        setYtLinksMap({});
+
+        void getYouTubeLinks()
+          .then((ytData) => {
+            if (!cancelled) setYtLinksMap(ytData);
+          })
+          .catch(() => {});
       } catch (err: unknown) {
-        setError(getErrorMessage(err, 'Failed to load chart data'));
+        if (!cancelled) setError(getErrorMessage(err, 'Failed to load chart data'));
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+
+    return () => { cancelled = true; };
   }, []);
 
   /* Derived data */

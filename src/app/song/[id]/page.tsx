@@ -67,13 +67,13 @@ export default function SongPage() {
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
+    setYtLinks(null);
 
     async function load() {
       try {
-        const [songData, chartingData, ytData, mktStreams] = await Promise.all([
+        const [songData, chartingData, mktStreams] = await Promise.all([
           getSong<SongEntity>(id),
           getChartingSongs<Record<string, ChartPosition[]>>(),
-          getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
           getMarketStreams().catch(() => ({} as Record<string, number>)),
         ]);
         if (cancelled) return;
@@ -86,9 +86,15 @@ export default function SongPage() {
         pos.sort((a: ChartPosition, b: ChartPosition) => b.streams - a.streams);
         setPositions(pos);
 
-        // YouTube links
-        setYtLinks(ytData[primaryUri] || ytData[songData.track_uri] || ytData[routeUri] || null);
         setMarketStreams(mktStreams);
+
+        void getYouTubeLinks()
+          .then((ytData) => {
+            if (!cancelled) {
+              setYtLinks(ytData[primaryUri] || ytData[songData.track_uri] || ytData[routeUri] || null);
+            }
+          })
+          .catch(() => {});
       } catch (err: unknown) {
         if (!cancelled) setError(getErrorMessage(err, 'Failed to load song'));
       } finally {

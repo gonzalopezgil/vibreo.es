@@ -216,10 +216,9 @@ export default function ChartTypeDatePage() {
         setChartDate(resolvedDate);
 
         if (chartType === 'songs') {
-          const [chartData, streams, ytData] = await Promise.all([
+          const [chartData, streams] = await Promise.all([
             getChartSongsDaily(currentCountry, dateParam),
             getMarketStreams().catch(() => ({} as Record<string, number>)),
-            getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
           ]);
           if (cancelled) return;
           setSongs(chartData);
@@ -227,21 +226,35 @@ export default function ChartTypeDatePage() {
           setAlbums([]);
           if (streams[currentCountry]) setTotalStreams(streams[currentCountry]);
           else setTotalStreams(null);
-          setYtLinksMap(ytData);
+          setYtLinksMap({});
           setArtistHeroSongs([]);
+
+          void getYouTubeLinks()
+            .then((ytData) => {
+              if (!cancelled) setYtLinksMap(ytData);
+            })
+            .catch(() => {});
         } else if (chartType === 'artists') {
-          const [chartData, chartingArtistsData, ytData] = await Promise.all([
-            getChartArtistsDaily(currentCountry, dateParam),
-            getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
-            getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
-          ]);
+          const chartData = await getChartArtistsDaily(currentCountry, dateParam);
           if (cancelled) return;
           setArtists(chartData);
           setSongs([]);
           setAlbums([]);
           setTotalStreams(null);
-          setYtLinksMap(ytData);
-          setArtistHeroSongs(chartingArtistsData[chartData[0]?.uri || '']?.songs || []);
+          setYtLinksMap({});
+          setArtistHeroSongs([]);
+
+          const topArtistUri = chartData[0]?.uri || '';
+          void Promise.all([
+            getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
+            getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
+          ])
+            .then(([chartingArtistsData, ytData]) => {
+              if (cancelled) return;
+              setYtLinksMap(ytData);
+              setArtistHeroSongs(chartingArtistsData[topArtistUri]?.songs || []);
+            })
+            .catch(() => {});
         } else {
           const chartData = await getChartAlbumsWeekly(currentCountry, dateParam);
           if (cancelled) return;

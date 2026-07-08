@@ -85,6 +85,16 @@ describe('Home page', () => {
     mockedGetHeroVideoUrl.mockReturnValue('/hero.mp4');
   });
 
+  it('renders the home chart before YouTube links finish loading', async () => {
+    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+
+    render(<Home />);
+
+    expect(await screen.findByRole('heading', { name: 'Hero Track' }, { timeout: 1000 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: "What's Hot" })).toBeInTheDocument();
+    expect(screen.getByText('Second Track')).toBeInTheDocument();
+  });
+
   it('uses a compact home hero height while preserving the bottom fade overlap', async () => {
     render(<Home />);
 

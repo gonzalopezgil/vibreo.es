@@ -1,5 +1,5 @@
 import type React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import SongPage from '@/app/song/[id]/page';
 import {
   getChartingSongs,
@@ -109,6 +109,16 @@ describe('SongPage', () => {
     expectHeroBottomFade(heading.closest('section'));
   });
 
+  it('renders song details before YouTube links finish loading', async () => {
+    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+
+    render(<SongPage />);
+
+    expect(await screen.findByRole('heading', { name: 'hate that i made you love me' }, { timeout: 1000 })).toBeInTheDocument();
+    expect(screen.getByText('Charting in 1 country')).toBeInTheDocument();
+    expect(screen.getByText('#2 Global')).toBeInTheDocument();
+  });
+
   it('uses the primary Spotify URI for alias song charting and hero video data', async () => {
     mockSongId = 'alias-track';
     mockedGetSong.mockResolvedValue({
@@ -136,6 +146,6 @@ describe('SongPage', () => {
     expect(await screen.findByRole('heading', { name: 'back to friends' })).toBeInTheDocument();
     expect(screen.getByText('Charting in 1 country')).toBeInTheDocument();
     expect(screen.getByText('#7 Global')).toBeInTheDocument();
-    expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('primary-track');
+    await waitFor(() => expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('primary-track'));
   });
 });

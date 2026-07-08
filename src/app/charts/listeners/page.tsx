@@ -188,6 +188,7 @@ export default function ListenerChartPage() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [heroVideoTrackId, setHeroVideoTrackId] = useState<string | null>(null);
   const latestSearchRef = useRef(0);
+  const latestHeroRequestRef = useRef(0);
 
   async function loadPage(offset: number) {
     if (offset === 0) setLoading(true);
@@ -200,12 +201,18 @@ export default function ListenerChartPage() {
       setNextOffset(page.nextOffset);
 
       if (offset === 0) {
-        const [chartingArtistsData, ytData] = await Promise.all([
+        const requestId = ++latestHeroRequestRef.current;
+        setHeroVideoTrackId(null);
+
+        void Promise.all([
           getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
           getYouTubeLinks().catch(() => ({} as YouTubeLinks)),
-        ]);
-
-        setHeroVideoTrackId(getListenerHeroVideoTrackId(page.items, chartingArtistsData, ytData));
+        ])
+          .then(([chartingArtistsData, ytData]) => {
+            if (latestHeroRequestRef.current !== requestId) return;
+            setHeroVideoTrackId(getListenerHeroVideoTrackId(page.items, chartingArtistsData, ytData));
+          })
+          .catch(() => {});
       }
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Failed to load listener chart'));
