@@ -6,6 +6,7 @@ import {
   getArtistChannels,
   getArtistListener,
   getChartingAlbums,
+  getChartingArtist,
   getChartingArtists,
   getChartingListeners,
   getErrorMessage,
@@ -51,6 +52,7 @@ jest.mock('@/lib/api', () => ({
   getArtistChannels: jest.fn(),
   getArtistListener: jest.fn(),
   getChartingAlbums: jest.fn(),
+  getChartingArtist: jest.fn(),
   getChartingArtists: jest.fn(),
   getChartingListeners: jest.fn(),
   getErrorMessage: jest.fn((error: unknown, fallback: string) => (
@@ -62,6 +64,7 @@ jest.mock('@/lib/api', () => ({
 
 const mockedGetArtist = jest.mocked(getArtist);
 const mockedGetArtistListener = jest.mocked(getArtistListener);
+const mockedGetChartingArtist = jest.mocked(getChartingArtist);
 const mockedGetChartingArtists = jest.mocked(getChartingArtists);
 const mockedGetChartingListeners = jest.mocked(getChartingListeners);
 const mockedGetChartingAlbums = jest.mocked(getChartingAlbums);
@@ -78,6 +81,20 @@ function expectHeroBottomFade(hero: Element | null) {
   expect(className).toEqual(expect.stringContaining('after:via-zinc-950/75'));
   expect(className).toEqual(expect.stringContaining('after:to-zinc-950'));
   expect(className).toEqual(expect.stringContaining('md:after:h-48'));
+}
+
+type MockChartingArtistData = {
+  songs?: Array<{
+    track_uri: string;
+    track_name: string;
+    image_url: string;
+    positions: Array<{ country: string; rank: number; streams: number }>;
+  }>;
+  positions?: Array<{ country: string; rank: number; days_on_chart: number }>;
+};
+
+function mockChartingArtistFromMap(map: Record<string, MockChartingArtistData>) {
+  mockedGetChartingArtist.mockResolvedValue(map['spotify:artist:ariana'] ?? { songs: [], positions: [] });
 }
 
 describe('ArtistPage', () => {
@@ -101,6 +118,8 @@ describe('ArtistPage', () => {
       peak_listeners: 126_970_279,
     });
     mockedGetChartingAlbums.mockResolvedValue({});
+    mockedGetChartingArtist.mockResolvedValue({ songs: [], positions: [] });
+    mockedGetChartingArtists.mockResolvedValue({});
     mockedGetChartingListeners.mockResolvedValue({});
     mockedGetArtistChannels.mockResolvedValue({});
     mockedGetYouTubeLinks.mockResolvedValue({});
@@ -111,7 +130,7 @@ describe('ArtistPage', () => {
   });
 
   it('applies the bottom fade to the artist video hero', async () => {
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [
           {
@@ -136,7 +155,7 @@ describe('ArtistPage', () => {
   });
 
   it('renders artist details before YouTube links finish loading', async () => {
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [
           {
@@ -159,7 +178,7 @@ describe('ArtistPage', () => {
   });
 
   it('uses the global rank for globally charting songs', async () => {
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [
           {
@@ -188,7 +207,7 @@ describe('ArtistPage', () => {
   });
 
   it('uses the highest-streaming country rank when a song is not charting globally', async () => {
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [
           {
@@ -213,7 +232,7 @@ describe('ArtistPage', () => {
   });
 
   it('renders monthly listener metrics in a dedicated panel before chart tabs', async () => {
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [
           {
@@ -304,7 +323,7 @@ describe('ArtistPage', () => {
         },
       ],
     });
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [],
         positions: [],
@@ -395,7 +414,7 @@ describe('ArtistPage', () => {
         },
       ],
     });
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [],
         positions: [],
@@ -438,7 +457,7 @@ describe('ArtistPage', () => {
   });
 
   it('highlights peak labels when current listener metrics match their peaks', async () => {
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [],
         positions: [],
@@ -474,7 +493,7 @@ describe('ArtistPage', () => {
   });
 
   it('requests only this artist listener record instead of the full listener map', async () => {
-    mockedGetChartingArtists.mockResolvedValue({
+    mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [],
         positions: [],
@@ -507,5 +526,27 @@ describe('ArtistPage', () => {
     expect(within(panel).getByText('Peak #1')).toBeInTheDocument();
     expect(mockedGetArtistListener).toHaveBeenCalledWith('ariana');
     expect(mockedGetChartingListeners).not.toHaveBeenCalled();
+  });
+
+  it('requests only this artist charting record instead of the full artist charting map', async () => {
+    mockChartingArtistFromMap({
+      'spotify:artist:ariana': {
+        songs: [
+          {
+            track_uri: 'spotify:track:scoped-song',
+            track_name: 'scoped song',
+            image_url: 'https://i.scdn.co/image/scoped-song.jpg',
+            positions: [{ country: 'global', rank: 5, streams: 2_000_000 }],
+          },
+        ],
+        positions: [{ country: 'global', rank: 8, days_on_chart: 10 }],
+      },
+    });
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByText('scoped song')).toBeInTheDocument();
+    expect(mockedGetChartingArtist).toHaveBeenCalledWith('ariana');
+    expect(mockedGetChartingArtists).not.toHaveBeenCalled();
   });
 });

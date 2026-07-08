@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Music, User, Disc } from 'lucide-react';
 import { SpotifyIcon, YouTubeMusicIcon } from '@/components/PlatformIcons';
 import { ImageModal } from '@/components/ImageModal';
 import { VideoHero } from '@/components/VideoHero';
-import { getArtist, getArtistListener, getChartingArtists, getChartingAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
+import { getArtist, getArtistListener, getChartingArtist, getChartingAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
 import { FlagIcon } from '@/components/FlagIcon';
 import { getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
@@ -476,7 +476,7 @@ export default function ArtistPage() {
       try {
         const [artistData, chartingData, albumChartingData, listenerData, channelsData] = await Promise.all([
           getArtist<ArtistEntity>(id),
-          getChartingArtists<Record<string, ChartingArtistData>>(),
+          getChartingArtist<ChartingArtistData>(id).catch(() => null as ChartingArtistData | null),
           getChartingAlbums<Record<string, ChartingAlbumData | ChartingAlbumEntry['positions']>>(),
           getArtistListener(id).catch(() => null as ListenerChartingData | null),
           getArtistChannels().catch(() => ({} as Record<string, string>)),
@@ -495,7 +495,7 @@ export default function ArtistPage() {
         });
 
         // Songs
-        const data = chartingData[uri];
+        const data = chartingData;
         if (data?.songs) {
           const sorted = [...data.songs].sort((a: ChartingSong, b: ChartingSong) => {
             return getSongDisplayStreams(b) - getSongDisplayStreams(a);

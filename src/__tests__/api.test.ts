@@ -115,6 +115,7 @@ describe('api', () => {
     ['getAlbum', (api) => api.getAlbum('album-1'), '/albums/album-1'],
     ['getChartingSongs', (api) => api.getChartingSongs(), '/charting/songs'],
     ['getChartingArtists', (api) => api.getChartingArtists(), '/charting/artists'],
+    ['getChartingArtist', (api) => api.getChartingArtist('artist1'), '/charting/artists/artist1'],
     ['getChartingAlbums', (api) => api.getChartingAlbums(), '/charting/albums'],
     ['getChartingListeners', (api) => api.getChartingListeners(), '/charting/listeners'],
     ['getArtistListener', (api) => api.getArtistListener('artist1'), '/charting/listeners/artist1'],

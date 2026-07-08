@@ -87,6 +87,10 @@ export async function getChartingArtists<T>() {
   return apiFetch<T>("/charting/artists");
 }
 
+export async function getChartingArtist<T>(id: string) {
+  return apiFetch<T>(`/charting/artists/${id}`);
+}
+
 export async function getChartingAlbums<T>() {
   return apiFetch<T>("/charting/albums");
 }
