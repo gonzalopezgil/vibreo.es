@@ -123,6 +123,10 @@ export async function getYouTubeLinks() {
   return apiFetch<YouTubeLinks>("/charting/youtube-links");
 }
 
+export async function getArtistYouTubeLinks(id: string) {
+  return apiFetch<YouTubeLinks>(`/charting/youtube-links/${id}`);
+}
+
 export async function getArtistChannels() {
   return apiFetch<Record<string, string>>("/charting/artist-channels");
 }

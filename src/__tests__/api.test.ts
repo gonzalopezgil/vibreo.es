@@ -127,6 +127,11 @@ describe('api', () => {
     ['getChartingListenersPage', (api) => api.getChartingListenersPage({ limit: 50, offset: 100 }), '/charting/listeners?limit=50&offset=100'],
     ['getMarketStreams', (api) => api.getMarketStreams(), '/charting/market-streams'],
     ['getYouTubeLinks', (api) => api.getYouTubeLinks(), '/charting/youtube-links'],
+    [
+      'getArtistYouTubeLinks',
+      (api) => (api as ApiModule & { getArtistYouTubeLinks: (id: string) => Promise<unknown> }).getArtistYouTubeLinks('artist1'),
+      '/charting/youtube-links/artist1',
+    ],
     ['getArtistChannels', (api) => api.getArtistChannels(), '/charting/artist-channels'],
   ];
 

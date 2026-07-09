@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Music, User, Disc } from 'lucide-react';
 import { SpotifyIcon, YouTubeMusicIcon } from '@/components/PlatformIcons';
 import { ImageModal } from '@/components/ImageModal';
 import { VideoHero } from '@/components/VideoHero';
-import { getArtist, getArtistListener, getChartingArtist, getChartingArtistAlbums, getArtistChannels, getYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
+import { getArtist, getArtistListener, getChartingArtist, getChartingArtistAlbums, getArtistChannels, getArtistYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
 import { FlagIcon } from '@/components/FlagIcon';
 import { getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
@@ -517,7 +517,7 @@ export default function ArtistPage() {
           }
         }
 
-        void getYouTubeLinks()
+        void getArtistYouTubeLinks(id)
           .then((ytData) => {
             if (!cancelled) setYtLinksMap(ytData);
           })

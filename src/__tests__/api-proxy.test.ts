@@ -190,6 +190,27 @@ describe('api proxy route', () => {
     expect(response.status).toBe(200);
   });
 
+  it('forwards one artist YouTube link map through the proxy', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const response = await GET(
+      new NextRequest('https://vibreo.es/api-proxy/charting/youtube-links/artist1', {
+        headers: { Origin: 'https://vibreo.es' },
+      }),
+      { params: Promise.resolve({ path: ['charting', 'youtube-links', 'artist1'] }) },
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith('https://api.vibreo.es/charting/youtube-links/artist1', expect.objectContaining({
+      next: { revalidate: 1800 },
+    }));
+    expect(response.status).toBe(200);
+  });
+
   it('rejects browser requests from unknown origins before contacting the API', async () => {
     const response = await GET(
       new NextRequest('https://vibreo.es/api-proxy/latest', {

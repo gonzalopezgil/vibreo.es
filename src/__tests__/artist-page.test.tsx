@@ -5,6 +5,7 @@ import {
   getArtist,
   getArtistChannels,
   getArtistListener,
+  getArtistYouTubeLinks,
   getChartingAlbums,
   getChartingArtist,
   getChartingArtists,
@@ -60,6 +61,7 @@ jest.mock('@/lib/api', () => ({
     error instanceof Error ? error.message : fallback
   )),
   getHeroVideoUrl: jest.fn(),
+  getArtistYouTubeLinks: jest.fn(),
   getYouTubeLinks: jest.fn(),
 }));
 
@@ -71,6 +73,7 @@ const mockedGetChartingListeners = jest.mocked(getChartingListeners);
 const mockedGetChartingAlbums = jest.mocked(getChartingAlbums);
 const mockedGetChartingArtistAlbums = jest.mocked(jest.requireMock('@/lib/api').getChartingArtistAlbums);
 const mockedGetArtistChannels = jest.mocked(getArtistChannels);
+const mockedGetArtistYouTubeLinks = jest.mocked(getArtistYouTubeLinks);
 const mockedGetYouTubeLinks = jest.mocked(getYouTubeLinks);
 const mockedGetHeroVideoUrl = jest.mocked(getHeroVideoUrl);
 const mockedGetErrorMessage = jest.mocked(getErrorMessage);
@@ -125,6 +128,7 @@ describe('ArtistPage', () => {
     mockedGetChartingArtists.mockResolvedValue({});
     mockedGetChartingListeners.mockResolvedValue({});
     mockedGetArtistChannels.mockResolvedValue({});
+    mockedGetArtistYouTubeLinks.mockResolvedValue({});
     mockedGetYouTubeLinks.mockResolvedValue({});
     mockedGetHeroVideoUrl.mockReturnValue('/hero.mp4');
     mockedGetErrorMessage.mockImplementation((error: unknown, fallback: string) => (
@@ -146,7 +150,7 @@ describe('ArtistPage', () => {
         positions: [],
       },
     });
-    mockedGetYouTubeLinks.mockResolvedValue({
+    mockedGetArtistYouTubeLinks.mockResolvedValue({
       'spotify:track:hate-that': { v: 'video-id' },
     });
 
@@ -171,7 +175,7 @@ describe('ArtistPage', () => {
         positions: [],
       },
     });
-    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+    mockedGetArtistYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getArtistYouTubeLinks>>>(() => {}));
 
     render(<ArtistPage />);
 
@@ -584,5 +588,34 @@ describe('ArtistPage', () => {
     expect(within(albumLink).getByText(/3 weeks/)).toBeInTheDocument();
     expect(mockedGetChartingArtistAlbums).toHaveBeenCalledWith('ariana');
     expect(mockedGetChartingAlbums).not.toHaveBeenCalled();
+  });
+
+  it('requests only this artist YouTube links instead of the full YouTube link map', async () => {
+    mockChartingArtistFromMap({
+      'spotify:artist:ariana': {
+        songs: [
+          {
+            track_uri: 'spotify:track:scoped-video-song',
+            track_name: 'scoped video song',
+            image_url: 'https://i.scdn.co/image/scoped-video-song.jpg',
+            positions: [{ country: 'global', rank: 4, streams: 2_500_000 }],
+          },
+        ],
+        positions: [],
+      },
+    });
+    mockedGetArtistYouTubeLinks.mockResolvedValue({
+      'spotify:track:scoped-video-song': { v: 'scoped-video-id', vt: 'OMV' },
+    });
+
+    render(<ArtistPage />);
+
+    expect(await screen.findByText('scoped video song')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('scoped-video-song');
+    });
+    expect(mockedGetArtistYouTubeLinks).toHaveBeenCalledWith('ariana');
+    expect(mockedGetYouTubeLinks).not.toHaveBeenCalled();
   });
 });
