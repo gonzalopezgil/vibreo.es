@@ -154,6 +154,28 @@ describe('api', () => {
     });
   });
 
+  it('sends ordered hero video candidates through the same-origin proxy', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ track_id: 'track2' }),
+    });
+    Object.defineProperty(globalThis, 'window', {
+      value: { location: { origin: 'https://vibreo.es' } },
+      configurable: true,
+    });
+
+    const api = await import('@/lib/api');
+
+    await expect(api.resolveHeroVideoTrack({
+      trackIds: ['track1', 'track2'],
+      artistIds: ['artist1', 'artist2'],
+    })).resolves.toEqual({ track_id: 'track2' });
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api-proxy/charting/hero-video?track_ids=track1%2Ctrack2&artist_ids=artist1%2Cartist2',
+      { cache: 'no-store', headers: {} },
+    );
+  });
+
   it('builds hero video URLs without fetching and normalizes error messages', async () => {
     const api = await import('@/lib/api');
 

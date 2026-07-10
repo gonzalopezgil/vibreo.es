@@ -211,6 +211,29 @@ describe('api proxy route', () => {
     expect(response.status).toBe(200);
   });
 
+  it('forwards hero video resolution with a short cache lifetime', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ track_id: 'track-1' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const response = await GET(
+      new NextRequest('https://vibreo.es/api-proxy/charting/hero-video?artist_ids=artist1', {
+        headers: { Origin: 'https://vibreo.es' },
+      }),
+      { params: Promise.resolve({ path: ['charting', 'hero-video'] }) },
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.vibreo.es/charting/hero-video?artist_ids=artist1',
+      expect.objectContaining({ next: { revalidate: 300 } }),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('public, max-age=300, stale-while-revalidate=300');
+  });
+
   it('rejects browser requests from unknown origins before contacting the API', async () => {
     const response = await GET(
       new NextRequest('https://vibreo.es/api-proxy/latest', {

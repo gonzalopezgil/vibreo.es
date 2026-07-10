@@ -6,6 +6,7 @@ const PUBLIC_ORIGIN = 'https://vibreo.es';
 const ALLOWED_API_PATHS = [
   /^\/latest$/,
   /^\/search$/,
+  /^\/charting\/hero-video$/,
   /^\/charting\/(?:songs|artists|albums|listeners|market-streams|youtube-links|artist-channels)$/,
   /^\/charting\/artists\/[a-z0-9]+$/i,
   /^\/charting\/albums\/[a-z0-9]+$/i,
@@ -78,6 +79,7 @@ function revalidateSeconds(path: string): number {
   if (path === '/latest') return 60;
   if (path === '/search') return 300;
   if (path.startsWith('/charts/')) return 3600;
+  if (path === '/charting/hero-video') return 300;
   if (path.startsWith('/charting/')) return 1800;
   return 86400;
 }

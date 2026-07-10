@@ -8,6 +8,7 @@ import {
   getErrorMessage,
   getHeroVideoUrl,
   getYouTubeLinks,
+  resolveHeroVideoTrack,
   searchAll,
 } from '@/lib/api';
 
@@ -47,6 +48,7 @@ jest.mock('@/lib/api', () => ({
   )),
   getHeroVideoUrl: jest.fn(),
   getYouTubeLinks: jest.fn(),
+  resolveHeroVideoTrack: jest.fn(),
   searchAll: jest.fn(),
 }));
 
@@ -56,6 +58,7 @@ const mockedGetChartingListenersPage = jest.mocked(getChartingListenersPage);
 const mockedGetErrorMessage = jest.mocked(getErrorMessage);
 const mockedGetHeroVideoUrl = jest.mocked(getHeroVideoUrl);
 const mockedGetYouTubeLinks = jest.mocked(getYouTubeLinks);
+const mockedResolveHeroVideoTrack = jest.mocked(resolveHeroVideoTrack);
 const mockedSearchAll = jest.mocked(searchAll);
 
 describe('ListenerChartPage', () => {
@@ -77,6 +80,7 @@ describe('ListenerChartPage', () => {
     mockedGetChartingArtists.mockResolvedValue({});
     mockedGetHeroVideoUrl.mockReturnValue('/hero.mp4');
     mockedGetYouTubeLinks.mockResolvedValue({});
+    mockedResolveHeroVideoTrack.mockResolvedValue({ track_id: null });
     mockedSearchAll.mockResolvedValue({
       query: '',
       topResult: null,
@@ -199,14 +203,15 @@ describe('ListenerChartPage', () => {
       offset: 0,
       total: 1,
     });
-    mockedGetChartingArtists.mockReturnValue(new Promise<Awaited<ReturnType<typeof getChartingArtists>>>(() => {}));
-    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+    mockedResolveHeroVideoTrack.mockReturnValue(new Promise<Awaited<ReturnType<typeof resolveHeroVideoTrack>>>(() => {}));
 
     render(<ListenerChartPage />);
 
     const table = await screen.findByTestId('listener-chart-table', {}, { timeout: 1000 });
     expect(await within(table).findByText('Alpha Artist', {}, { timeout: 1000 })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search artists')).not.toBeDisabled();
+    expect(mockedGetChartingArtists).not.toHaveBeenCalled();
+    expect(mockedGetYouTubeLinks).not.toHaveBeenCalled();
   });
 
   it('highlights listener values and uses a plain peak label when artists are at their listener peaks', async () => {
@@ -296,7 +301,7 @@ describe('ListenerChartPage', () => {
     expect(within(table).getByText('Listeners')).toBeInTheDocument();
   });
 
-  it('uses the first linked song video from the loaded listener artists', async () => {
+  it('uses the first available hero video resolved from the loaded listener artists', async () => {
     mockedGetChartingListenersPage.mockResolvedValueOnce({
       items: [
         {
@@ -329,31 +334,7 @@ describe('ListenerChartPage', () => {
       offset: 0,
       total: 2,
     });
-    mockedGetChartingArtists.mockResolvedValue({
-      'spotify:artist:alpha': {
-        songs: [
-          {
-            track_uri: 'spotify:track:no-video',
-            track_name: 'no video',
-            image_url: 'https://i.scdn.co/image/no-video.jpg',
-            positions: [],
-          },
-        ],
-      },
-      'spotify:artist:bravo': {
-        songs: [
-          {
-            track_uri: 'spotify:track:hero-song',
-            track_name: 'hero song',
-            image_url: 'https://i.scdn.co/image/hero-song.jpg',
-            positions: [],
-          },
-        ],
-      },
-    });
-    mockedGetYouTubeLinks.mockResolvedValue({
-      'spotify:track:hero-song': { v: 'video-id' },
-    });
+    mockedResolveHeroVideoTrack.mockResolvedValue({ track_id: 'hero-song' });
 
     render(<ListenerChartPage />);
 
@@ -371,6 +352,9 @@ describe('ListenerChartPage', () => {
     expect(video).not.toHaveClass('h-[100svh]');
     expect(video).toHaveClass('h-full');
     expect(video).toHaveClass('w-full');
+    expect(mockedResolveHeroVideoTrack).toHaveBeenCalledWith({ artistIds: ['alpha', 'bravo'] });
+    expect(mockedGetChartingArtists).not.toHaveBeenCalled();
+    expect(mockedGetYouTubeLinks).not.toHaveBeenCalled();
     expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('hero-song');
   });
 

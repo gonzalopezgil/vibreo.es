@@ -5,7 +5,6 @@ import {
   getArtist,
   getArtistChannels,
   getArtistListener,
-  getArtistYouTubeLinks,
   getChartingAlbums,
   getChartingArtist,
   getChartingArtists,
@@ -13,6 +12,7 @@ import {
   getErrorMessage,
   getHeroVideoUrl,
   getYouTubeLinks,
+  resolveHeroVideoTrack,
 } from '@/lib/api';
 
 jest.mock('next/navigation', () => ({
@@ -61,8 +61,8 @@ jest.mock('@/lib/api', () => ({
     error instanceof Error ? error.message : fallback
   )),
   getHeroVideoUrl: jest.fn(),
-  getArtistYouTubeLinks: jest.fn(),
   getYouTubeLinks: jest.fn(),
+  resolveHeroVideoTrack: jest.fn(),
 }));
 
 const mockedGetArtist = jest.mocked(getArtist);
@@ -73,10 +73,10 @@ const mockedGetChartingListeners = jest.mocked(getChartingListeners);
 const mockedGetChartingAlbums = jest.mocked(getChartingAlbums);
 const mockedGetChartingArtistAlbums = jest.mocked(jest.requireMock('@/lib/api').getChartingArtistAlbums);
 const mockedGetArtistChannels = jest.mocked(getArtistChannels);
-const mockedGetArtistYouTubeLinks = jest.mocked(getArtistYouTubeLinks);
 const mockedGetYouTubeLinks = jest.mocked(getYouTubeLinks);
 const mockedGetHeroVideoUrl = jest.mocked(getHeroVideoUrl);
 const mockedGetErrorMessage = jest.mocked(getErrorMessage);
+const mockedResolveHeroVideoTrack = jest.mocked(resolveHeroVideoTrack);
 
 function expectHeroBottomFade(hero: Element | null) {
   expect(hero).not.toBeNull();
@@ -128,8 +128,8 @@ describe('ArtistPage', () => {
     mockedGetChartingArtists.mockResolvedValue({});
     mockedGetChartingListeners.mockResolvedValue({});
     mockedGetArtistChannels.mockResolvedValue({});
-    mockedGetArtistYouTubeLinks.mockResolvedValue({});
     mockedGetYouTubeLinks.mockResolvedValue({});
+    mockedResolveHeroVideoTrack.mockResolvedValue({ track_id: null });
     mockedGetHeroVideoUrl.mockReturnValue('/hero.mp4');
     mockedGetErrorMessage.mockImplementation((error: unknown, fallback: string) => (
       error instanceof Error ? error.message : fallback
@@ -150,9 +150,7 @@ describe('ArtistPage', () => {
         positions: [],
       },
     });
-    mockedGetArtistYouTubeLinks.mockResolvedValue({
-      'spotify:track:hate-that': { v: 'video-id' },
-    });
+    mockedResolveHeroVideoTrack.mockResolvedValue({ track_id: 'hate-that' });
 
     render(<ArtistPage />);
 
@@ -161,7 +159,7 @@ describe('ArtistPage', () => {
     expectHeroBottomFade(heading.closest('section'));
   });
 
-  it('renders artist details before YouTube links finish loading', async () => {
+  it('renders artist details before hero video resolution finishes loading', async () => {
     mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [
@@ -175,7 +173,7 @@ describe('ArtistPage', () => {
         positions: [],
       },
     });
-    mockedGetArtistYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getArtistYouTubeLinks>>>(() => {}));
+    mockedResolveHeroVideoTrack.mockReturnValue(new Promise<Awaited<ReturnType<typeof resolveHeroVideoTrack>>>(() => {}));
 
     render(<ArtistPage />);
 
@@ -590,7 +588,7 @@ describe('ArtistPage', () => {
     expect(mockedGetChartingAlbums).not.toHaveBeenCalled();
   });
 
-  it('requests only this artist YouTube links instead of the full YouTube link map', async () => {
+  it('resolves the hero from this artist without requesting a YouTube link map', async () => {
     mockChartingArtistFromMap({
       'spotify:artist:ariana': {
         songs: [
@@ -604,9 +602,7 @@ describe('ArtistPage', () => {
         positions: [],
       },
     });
-    mockedGetArtistYouTubeLinks.mockResolvedValue({
-      'spotify:track:scoped-video-song': { v: 'scoped-video-id', vt: 'OMV' },
-    });
+    mockedResolveHeroVideoTrack.mockResolvedValue({ track_id: 'scoped-video-song' });
 
     render(<ArtistPage />);
 
@@ -615,7 +611,7 @@ describe('ArtistPage', () => {
     await waitFor(() => {
       expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('scoped-video-song');
     });
-    expect(mockedGetArtistYouTubeLinks).toHaveBeenCalledWith('ariana');
+    expect(mockedResolveHeroVideoTrack).toHaveBeenCalledWith({ artistIds: ['ariana'] });
     expect(mockedGetYouTubeLinks).not.toHaveBeenCalled();
   });
 });

@@ -16,10 +16,10 @@ import {
   getChartSongsDaily,
   getChartArtistsDaily,
   getChartAlbumsWeekly,
-  getChartingArtists,
   getLatest,
   getMarketStreams,
   getYouTubeLinks,
+  resolveHeroVideoTrack,
   getHeroVideoUrl,
   getErrorMessage,
 } from '@/lib/api';
@@ -27,16 +27,6 @@ import { COUNTRY_CODES, getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
 
 type ChartType = 'songs' | 'artists' | 'albums';
-
-interface ChartingArtistSong {
-  track_uri: string;
-  track_name: string;
-  image_url: string;
-}
-
-type ChartingArtistData = {
-  songs?: ChartingArtistSong[];
-};
 
 const CHART_TABS: { type: ChartType; label: string }[] = [
   { type: 'songs', label: 'Songs' },
@@ -139,7 +129,7 @@ export default function ChartTypeDatePage() {
   const [expandedUri, setExpandedUri] = useState<string | null>(null);
   const [totalStreams, setTotalStreams] = useState<number | null>(null);
   const [ytLinksMap, setYtLinksMap] = useState<Record<string, { m?: string; v?: string; vt?: string }>>({});
-  const [artistHeroSongs, setArtistHeroSongs] = useState<ChartingArtistSong[]>([]);
+  const [artistHeroVideoTrackId, setArtistHeroVideoTrackId] = useState<string | null>(null);
   const [filterQuery, setFilterQuery] = useState('');
 
   // Build available dates set from latest (for now, generate a range going back)
@@ -202,6 +192,7 @@ export default function ChartTypeDatePage() {
     setError(null);
     setFilterQuery('');
     setExpandedUri(null);
+    setArtistHeroVideoTrackId(null);
 
     async function load() {
       try {
@@ -227,7 +218,6 @@ export default function ChartTypeDatePage() {
           if (streams[currentCountry]) setTotalStreams(streams[currentCountry]);
           else setTotalStreams(null);
           setYtLinksMap({});
-          setArtistHeroSongs([]);
 
           void getYouTubeLinks()
             .then((ytData) => {
@@ -242,19 +232,15 @@ export default function ChartTypeDatePage() {
           setAlbums([]);
           setTotalStreams(null);
           setYtLinksMap({});
-          setArtistHeroSongs([]);
 
-          const topArtistUri = chartData[0]?.uri || '';
-          void Promise.all([
-            getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
-            getYouTubeLinks().catch(() => ({} as Record<string, { m?: string; v?: string; vt?: string }>)),
-          ])
-            .then(([chartingArtistsData, ytData]) => {
-              if (cancelled) return;
-              setYtLinksMap(ytData);
-              setArtistHeroSongs(chartingArtistsData[topArtistUri]?.songs || []);
-            })
-            .catch(() => {});
+          const topArtistId = chartData[0]?.uri ? extractId(chartData[0].uri) : '';
+          if (topArtistId) {
+            void resolveHeroVideoTrack({ artistIds: [topArtistId] })
+              .then(({ track_id }) => {
+                if (!cancelled) setArtistHeroVideoTrackId(track_id);
+              })
+              .catch(() => {});
+          }
         } else {
           const chartData = await getChartAlbumsWeekly(currentCountry, dateParam);
           if (cancelled) return;
@@ -263,7 +249,6 @@ export default function ChartTypeDatePage() {
           setArtists([]);
           setTotalStreams(null);
           setYtLinksMap({});
-          setArtistHeroSongs([]);
         }
       } catch (err: unknown) {
         if (!cancelled) setError(getErrorMessage(err, 'Failed to load chart'));
@@ -278,21 +263,17 @@ export default function ChartTypeDatePage() {
 
   const hasData = songs.length > 0 || artists.length > 0 || albums.length > 0;
 
-  // Hero video for #1 song or a linked song from the #1 artist
+  // Hero video for #1 song or the first available video from the #1 artist
   const numberOneSong = chartType === 'songs' ? songs[0] || null : null;
   const numberOneArtist = chartType === 'artists' ? artists[0] || null : null;
-  const artistHeroSourceSong = numberOneArtist
-    ? artistHeroSongs.find((song) => ytLinksMap[song.track_uri]?.v) || null
-    : null;
   const heroVideoSrc = (() => {
     if (numberOneSong) {
       const yt = ytLinksMap[numberOneSong.uri];
       if (!yt?.v) return null;
       return getHeroVideoUrl(extractId(numberOneSong.uri));
     }
-    if (!artistHeroSourceSong) return null;
-    const trackId = extractId(artistHeroSourceSong.track_uri);
-    return getHeroVideoUrl(trackId);
+    if (!numberOneArtist || !artistHeroVideoTrackId) return null;
+    return getHeroVideoUrl(artistHeroVideoTrackId);
   })();
   const heroFallbackImageUrl = numberOneSong?.image_url || numberOneArtist?.image_url || '';
   const heroHighlight = numberOneSong

@@ -9,14 +9,12 @@ import { SpotifyIcon } from '@/components/PlatformIcons';
 import { VideoHero } from '@/components/VideoHero';
 import {
   getArtistListener,
-  getChartingArtists,
   getChartingListenersPage,
   getErrorMessage,
   getHeroVideoUrl,
-  getYouTubeLinks,
+  resolveHeroVideoTrack,
   searchAll,
   type ListenerChartEntry,
-  type YouTubeLinks,
 } from '@/lib/api';
 import { formatStreams } from '@/lib/format';
 
@@ -25,14 +23,6 @@ const SEARCH_RESULT_LIMIT = 10;
 
 type SearchResultItem = NonNullable<Awaited<ReturnType<typeof searchAll>>['topResult']>;
 
-interface ChartingArtistSong {
-  track_uri: string;
-}
-
-interface ChartingArtistData {
-  songs?: ChartingArtistSong[];
-}
-
 function formatSignedCompact(value: number) {
   const sign = value > 0 ? '+' : value < 0 ? '-' : '';
   return `${sign}${formatStreams(Math.abs(value))}`;
@@ -40,18 +30,6 @@ function formatSignedCompact(value: number) {
 
 function extractId(uri: string) {
   return uri.split(':').pop() || uri;
-}
-
-function getListenerHeroVideoTrackId(
-  listenerEntries: ListenerChartEntry[],
-  chartingArtistsData: Record<string, ChartingArtistData>,
-  ytData: YouTubeLinks,
-) {
-  for (const entry of listenerEntries) {
-    const sourceSong = chartingArtistsData[entry.artist_uri]?.songs?.find((song) => ytData[song.track_uri]?.v);
-    if (sourceSong) return extractId(sourceSong.track_uri);
-  }
-  return null;
 }
 
 function RankChangeIndicator({ entry }: { entry: ListenerChartEntry }) {
@@ -202,17 +180,17 @@ export default function ListenerChartPage() {
 
       if (offset === 0) {
         const requestId = ++latestHeroRequestRef.current;
+        const heroArtistIds = page.items.slice(0, 50).map((entry) => entry.artist_id);
         setHeroVideoTrackId(null);
 
-        void Promise.all([
-          getChartingArtists<Record<string, ChartingArtistData>>().catch(() => ({} as Record<string, ChartingArtistData>)),
-          getYouTubeLinks().catch(() => ({} as YouTubeLinks)),
-        ])
-          .then(([chartingArtistsData, ytData]) => {
-            if (latestHeroRequestRef.current !== requestId) return;
-            setHeroVideoTrackId(getListenerHeroVideoTrackId(page.items, chartingArtistsData, ytData));
-          })
-          .catch(() => {});
+        if (heroArtistIds.length > 0) {
+          void resolveHeroVideoTrack({ artistIds: heroArtistIds })
+            .then(({ track_id }) => {
+              if (latestHeroRequestRef.current !== requestId) return;
+              setHeroVideoTrackId(track_id);
+            })
+            .catch(() => {});
+        }
       }
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Failed to load listener chart'));

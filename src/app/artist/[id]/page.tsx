@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Music, User, Disc } from 'lucide-react';
 import { SpotifyIcon, YouTubeMusicIcon } from '@/components/PlatformIcons';
 import { ImageModal } from '@/components/ImageModal';
 import { VideoHero } from '@/components/VideoHero';
-import { getArtist, getArtistListener, getChartingArtist, getChartingArtistAlbums, getArtistChannels, getArtistYouTubeLinks, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
+import { getArtist, getArtistListener, getChartingArtist, getChartingArtistAlbums, getArtistChannels, resolveHeroVideoTrack, getHeroVideoUrl, getErrorMessage } from '@/lib/api';
 import { FlagIcon } from '@/components/FlagIcon';
 import { getCountryName } from '@/lib/countries';
 import { formatStreams } from '@/lib/format';
@@ -456,13 +456,13 @@ export default function ArtistPage() {
   const [error, setError] = useState<string | null>(null);
   const [showImage, setShowImage] = useState(false);
   const [ytChannelId, setYtChannelId] = useState<string | null>(null);
-  const [ytLinksMap, setYtLinksMap] = useState<Record<string, { m?: string; v?: string; vt?: string }>>({});
+  const [heroVideoTrackId, setHeroVideoTrackId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('songs');
 
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-    setYtLinksMap({});
+    setHeroVideoTrackId(null);
 
     async function load() {
       try {
@@ -517,9 +517,9 @@ export default function ArtistPage() {
           }
         }
 
-        void getArtistYouTubeLinks(id)
-          .then((ytData) => {
-            if (!cancelled) setYtLinksMap(ytData);
+        void resolveHeroVideoTrack({ artistIds: [id] })
+          .then(({ track_id }) => {
+            if (!cancelled) setHeroVideoTrackId(track_id);
           })
           .catch(() => {});
       } catch (err: unknown) {
@@ -571,8 +571,7 @@ export default function ArtistPage() {
     { key: 'albums', label: 'Albums', count: artistAlbums.length },
   ];
 
-  const heroSourceSong = songs.find((song) => ytLinksMap[song.track_uri]?.v) || null;
-  const heroVideoSrc = heroSourceSong ? getHeroVideoUrl(extractId(heroSourceSong.track_uri)) : null;
+  const heroVideoSrc = heroVideoTrackId ? getHeroVideoUrl(heroVideoTrackId) : null;
 
   return (
     <main className="min-h-screen">

@@ -11,6 +11,7 @@ import {
   getLatest,
   getMarketStreams,
   getYouTubeLinks,
+  resolveHeroVideoTrack,
 } from '@/lib/api';
 
 let mockParams = { country: 'global', type: 'songs', date: 'latest' };
@@ -60,6 +61,7 @@ jest.mock('@/lib/api', () => ({
   getLatest: jest.fn(),
   getMarketStreams: jest.fn(),
   getYouTubeLinks: jest.fn(),
+  resolveHeroVideoTrack: jest.fn(),
 }));
 
 const mockedGetLatest = jest.mocked(getLatest);
@@ -71,6 +73,7 @@ const mockedGetMarketStreams = jest.mocked(getMarketStreams);
 const mockedGetYouTubeLinks = jest.mocked(getYouTubeLinks);
 const mockedGetHeroVideoUrl = jest.mocked(getHeroVideoUrl);
 const mockedGetErrorMessage = jest.mocked(getErrorMessage);
+const mockedResolveHeroVideoTrack = jest.mocked(resolveHeroVideoTrack);
 
 function expectHeroBottomFade(hero: Element | null) {
   expect(hero).not.toBeNull();
@@ -119,6 +122,7 @@ describe('ChartTypeDatePage', () => {
     mockedGetYouTubeLinks.mockResolvedValue({
       'spotify:track:hate-that': { v: 'video-id' },
     });
+    mockedResolveHeroVideoTrack.mockResolvedValue({ track_id: null });
     mockedGetHeroVideoUrl.mockReturnValue('/hero.mp4');
     mockedGetErrorMessage.mockImplementation((error: unknown, fallback: string) => (
       error instanceof Error ? error.message : fallback
@@ -174,14 +178,15 @@ describe('ChartTypeDatePage', () => {
         entry_date: '2026-01-01',
       },
     ]);
-    mockedGetChartingArtists.mockReturnValue(new Promise<Awaited<ReturnType<typeof getChartingArtists>>>(() => {}));
-    mockedGetYouTubeLinks.mockReturnValue(new Promise<Awaited<ReturnType<typeof getYouTubeLinks>>>(() => {}));
+    mockedResolveHeroVideoTrack.mockReturnValue(new Promise<Awaited<ReturnType<typeof resolveHeroVideoTrack>>>(() => {}));
 
     render(<ChartTypeDatePage />);
 
     expect(await screen.findAllByText('Ariana Grande', {}, { timeout: 1000 })).toHaveLength(2);
     expect(screen.getByText('#1 right now')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Filter by artist')).not.toBeDisabled();
+    expect(mockedGetChartingArtists).not.toHaveBeenCalled();
+    expect(mockedGetYouTubeLinks).not.toHaveBeenCalled();
   });
 
   it('reserves the #1 highlight slot while chart data is loading', () => {
@@ -210,7 +215,7 @@ describe('ChartTypeDatePage', () => {
     expect(filter).toHaveValue('');
   });
 
-  it('uses a video from the #1 artist when the artists chart has a linked song video', async () => {
+  it('uses the available hero video resolved for the #1 artist', async () => {
     mockParams = { country: 'global', type: 'artists', date: 'latest' };
     mockedGetChartArtistsDaily.mockResolvedValue([
       {
@@ -228,28 +233,7 @@ describe('ChartTypeDatePage', () => {
         entry_date: '2026-01-01',
       },
     ]);
-    mockedGetChartingArtists.mockResolvedValue({
-      'spotify:artist:ariana': {
-        songs: [
-          {
-            track_uri: 'spotify:track:no-video',
-            track_name: 'no video',
-            image_url: 'https://i.scdn.co/image/no-video.jpg',
-            positions: [{ country: 'global', rank: 8, streams: 1_000_000 }],
-          },
-          {
-            track_uri: 'spotify:track:hate-that',
-            track_name: 'hate that i made you love me',
-            image_url: 'https://i.scdn.co/image/hate-that.jpg',
-            positions: [{ country: 'global', rank: 1, streams: 6_300_000 }],
-          },
-        ],
-        positions: [],
-      },
-    });
-    mockedGetYouTubeLinks.mockResolvedValue({
-      'spotify:track:hate-that': { v: 'video-id' },
-    });
+    mockedResolveHeroVideoTrack.mockResolvedValue({ track_id: 'hate-that' });
 
     render(<ChartTypeDatePage />);
 
@@ -259,6 +243,9 @@ describe('ChartTypeDatePage', () => {
     await waitFor(() => {
       expect(hero?.querySelector('video')).toHaveAttribute('src', '/hero.mp4');
     });
+    expect(mockedResolveHeroVideoTrack).toHaveBeenCalledWith({ artistIds: ['ariana'] });
+    expect(mockedGetChartingArtists).not.toHaveBeenCalled();
+    expect(mockedGetYouTubeLinks).not.toHaveBeenCalled();
     expect(mockedGetHeroVideoUrl).toHaveBeenCalledWith('hate-that');
   });
 
@@ -280,9 +267,6 @@ describe('ChartTypeDatePage', () => {
         entry_date: '2026-01-01',
       },
     ]);
-    mockedGetChartingArtists.mockResolvedValue({});
-    mockedGetYouTubeLinks.mockResolvedValue({});
-
     render(<ChartTypeDatePage />);
 
     await screen.findByText('#1 right now');

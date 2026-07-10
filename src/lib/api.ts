@@ -119,6 +119,19 @@ export function getHeroVideoUrl(trackId: string): string {
   return `${DIRECT_API}/hero-video/${trackId}`;
 }
 
+export async function resolveHeroVideoTrack({
+  trackIds = [],
+  artistIds = [],
+}: {
+  trackIds?: string[];
+  artistIds?: string[];
+}) {
+  const params = new URLSearchParams();
+  if (trackIds.length > 0) params.set("track_ids", trackIds.join(","));
+  if (artistIds.length > 0) params.set("artist_ids", artistIds.join(","));
+  return apiFetch<{ track_id: string | null }>(`/charting/hero-video?${params.toString()}`);
+}
+
 export async function getYouTubeLinks() {
   return apiFetch<YouTubeLinks>("/charting/youtube-links");
 }
