@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { BottomNav } from "@/components/BottomNav";
 import "./globals.css";
 
@@ -38,6 +39,7 @@ export default function RootLayout({
 
         <div className="pb-20">{children}</div>
         <BottomNav />
+        <Analytics />
       </body>
     </html>
   );
